@@ -1,7 +1,15 @@
-import Image from "next/image";
-import { InteractiveHoverButton } from "@/components/magicui/interactive-hover-button";
+
+"use client";
+
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+
+  const handleGetStarted = () => {
+    router.push("/dashboard");
+  };
+
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
       {/* Background Gradient */}
@@ -35,7 +43,10 @@ export default function Home() {
           <p className="text-lg md:text-xl text-white mb-8 max-w-3xl mx-auto leading-relaxed">
             Track shared expenses, manage bills,and send reminders — all in one place
           </p>
-          <button className="bg-white text-black px-5 py-2 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors cursor-pointer">
+          <button 
+            onClick={handleGetStarted}
+            className="bg-white text-black px-5 py-2 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors cursor-pointer"
+          >
             Get Started
           </button>
 

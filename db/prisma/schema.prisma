@@ -1,0 +1,253 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+        
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  phoneNumber   String?
+  emailVerified Boolean  @default(false)
+  phoneVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Authentication
+  accounts Account[]
+  sessions Session[]
+
+  // Expenses where user is the payer
+  expensesPaid     Expense[] @relation("PayerExpenses")
+  // Expenses where user is the payee
+  expensesOwed     Expense[] @relation("PayeeExpenses")
+  
+  // Recurring expenses
+  recurringExpenses RecurringExpense[]
+  
+  // Payment screenshots
+  paymentScreenshots PaymentScreenshot[]
+  
+  // QR codes uploaded by user
+  qrCodes QRCode[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Expense {
+  id          String      @id @default(cuid())
+  title       String
+  amount      Float
+  description String?
+  dueDate     DateTime?
+  status      ExpenseStatus @default(UNPAID)
+  category    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relationships
+  payerId     String
+  payer       User        @relation("PayerExpenses", fields: [payerId], references: [id])
+  
+  payeeId     String
+  payee       User        @relation("PayeeExpenses", fields: [payeeId], references: [id])
+  
+  // Payment proof
+  paymentScreenshots PaymentScreenshot[]
+  
+  // Reminders sent
+  reminders   Reminder[]
+
+  @@map("expenses")
+}
+
+model RecurringExpense {
+  id          String              @id @default(cuid())
+  title       String
+  amount      Float
+  description String?
+  startDate   DateTime
+  frequency   RecurringFrequency
+  dueDate     Int                 // Day of month when due (1-31)
+  status      ExpenseStatus       @default(ACTIVE)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  
+  // User who created this recurring expense
+  userId      String
+  user        User                @relation(fields: [userId], references: [id])
+  
+  // Shared responsibility (multiple users can be responsible)
+  sharedWith  RecurringExpenseShare[]
+  
+  // Payment history
+  payments    RecurringPayment[]
+  
+  // Reminders
+  reminders   Reminder[]
+
+  @@map("recurring_expenses")
+}
+
+model RecurringExpenseShare {
+  id                 String           @id @default(cuid())
+  recurringExpenseId String
+  userId             String
+  sharePercentage    Float            @default(50) // Percentage of the expense this user is responsible for
+  
+  recurringExpense   RecurringExpense @relation(fields: [recurringExpenseId], references: [id], onDelete: Cascade)
+  
+  @@unique([recurringExpenseId, userId])
+  @@map("recurring_expense_shares")
+}
+
+model RecurringPayment {
+  id                 String           @id @default(cuid())
+  recurringExpenseId String
+  amount             Float
+  paidDate           DateTime
+  dueMonth           Int              // Month this payment was for (1-12)
+  dueYear            Int              // Year this payment was for
+  createdAt          DateTime         @default(now())
+  
+  recurringExpense   RecurringExpense @relation(fields: [recurringExpenseId], references: [id], onDelete: Cascade)
+  
+  @@unique([recurringExpenseId, dueMonth, dueYear])
+  @@map("recurring_payments")
+}
+
+model PaymentScreenshot {
+  id          String    @id @default(cuid())
+  fileName    String
+  fileUrl     String
+  uploadedAt  DateTime  @default(now())
+  
+  // OCR extracted data
+  extractedAmount   Float?
+  extractedMerchant String?
+  extractedDate     DateTime?
+  isVerified        Boolean   @default(false)
+  
+  // Relationships
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  
+  expenseId   String?
+  expense     Expense?  @relation(fields: [expenseId], references: [id])
+
+  @@map("payment_screenshots")
+}
+
+model QRCode {
+  id          String   @id @default(cuid())
+  type        QRType   // UPI, PAYTM, GPAY, etc.
+  qrData      String   // The actual QR code data
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("qr_codes")
+}
+
+model Reminder {
+  id        String       @id @default(cuid())
+  type      ReminderType
+  status    ReminderStatus @default(PENDING)
+  sentAt    DateTime?
+  scheduledFor DateTime
+  message   String
+  recipient String       // Email or phone number
+  createdAt DateTime     @default(now())
+  
+  // Can be linked to either expense or recurring expense
+  expenseId          String?
+  expense            Expense?          @relation(fields: [expenseId], references: [id])
+  
+  recurringExpenseId String?
+  recurringExpense   RecurringExpense? @relation(fields: [recurringExpenseId], references: [id])
+
+  @@map("reminders")
+}
+
+// Enums
+enum ExpenseStatus {
+  PAID
+  UNPAID
+  OVERDUE
+  ACTIVE    // For recurring expenses
+  INACTIVE  // For recurring expenses
+}
+
+enum RecurringFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum QRType {
+  UPI
+  PAYTM
+  GPAY
+  PHONEPE
+  OTHER
+}
+
+enum ReminderType {
+  EMAIL
+  SMS
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
