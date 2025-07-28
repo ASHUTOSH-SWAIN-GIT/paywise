@@ -1,6 +1,6 @@
-import { SplitManagement } from "./sections/SplitManagement";
-import { RecurringPayments } from "./sections/RecurringPayments";
-import { TrackExpense } from "./sections/TrackExpense";
+import { SplitManagement } from "../split/page";
+import { RecurringPayments } from "../recuring/page";
+import { TrackExpense } from "../track/page";
 
 type MainContentProps = {
   activeSection: string;

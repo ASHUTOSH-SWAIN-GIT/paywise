@@ -1,4 +1,5 @@
-import { ActionButton } from "../ui/ActionButton";
+import React from "react";
+import { ActionButton } from "../components/ui/ActionButton";
 
 export const RecurringPayments = () => {
   return (

@@ -1,4 +1,5 @@
-import { ActionButton } from "../ui/ActionButton";
+import { ActionButton } from "../components/ui/ActionButton";
+import { AddSplitDialog } from "../components/AddSplitDialog";
 
 export const SplitManagement = () => {
   return (
@@ -17,7 +18,9 @@ export const SplitManagement = () => {
           </div>
           <div className="border border-neutral-800 rounded-lg p-4 bg-black/50 flex flex-col justify-center items-start">
             <h3 className="font-semibold text-white mb-2">Quick Actions</h3>
-            <ActionButton onClick={() => { /* TODO: handle add new split */ }}>Add New Split</ActionButton>
+            <AddSplitDialog>
+              <ActionButton onClick={() => {}}>Add New Split</ActionButton>
+            </AddSplitDialog>
           </div>
         </div>
       </div>
