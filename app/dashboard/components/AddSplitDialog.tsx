@@ -169,6 +169,39 @@ export function AddSplitDialog({ children }: AddSplitDialogProps) {
                 className="w-full pl-10 pr-3 py-2 bg-black border-2 border-gray-700 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
               />
             </div>
+            
+            {/* User List */}
+            <div className="max-h-40 overflow-y-auto border border-gray-700 rounded-lg bg-black">
+              {usersLoading ? (
+                <div className="flex items-center justify-center p-4 text-sm text-gray-400">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>Loading users...</span>
+                </div>
+              ) : filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => {
+                  const isSelected = formData.selectedUsers.includes(user.id);
+                  return (
+                    <div
+                      key={user.id}
+                      className={`flex items-center space-x-3 p-3 cursor-pointer transition-colors ${isSelected ? 'bg-gray-800' : 'hover:bg-gray-900'}`}
+                      onClick={() => handleUserToggle(user.id)}
+                    >
+                      <div className={`flex h-5 w-5 items-center justify-center rounded border ${isSelected ? 'border-white bg-white' : 'border-gray-600'}`}>
+                        {isSelected && <Check className="h-4 w-4 text-black" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">{user.name || 'Unknown User'}</p>
+                        <p className="text-xs text-gray-400">{user.email}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-6 px-4 text-sm text-gray-400">
+                  <p>{searchQuery ? `No users found for "${searchQuery}"` : 'No other users available.'}</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Notification Interval */}

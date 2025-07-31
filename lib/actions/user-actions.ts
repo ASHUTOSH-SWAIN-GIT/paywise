@@ -50,6 +50,7 @@ export async function syncUserAction(userId: string): Promise<{ success: boolean
         email: authUser.email,
         name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || null,
         emailVerified: authUser.email_confirmed_at ? true : false,
+        QrCode: '', // Provide a default value or generate as needed
       };
 
       const newUser = await prisma.user.create({

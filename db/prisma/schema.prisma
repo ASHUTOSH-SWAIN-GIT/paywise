@@ -25,7 +25,8 @@ model User {
   updatedAt     DateTime @updatedAt
   QrCode        String
 
-  splitManagement SplitManagement?
+  splitManagement SplitManagement[]
+  splitParticipants SplitParticipant[]
   reccuringPayments ReccuringPayments?
   trackExpenses TrackExpense[]
 
@@ -34,12 +35,29 @@ model User {
 model SplitManagement {
   id           String @id @default(cuid())
   description  String
-  splitWith    String
   Notification DateTime
-  SendNotifTo  String @unique
-
-  user User @relation(fields: [SendNotifTo], references: [email])
+  assigneeId   String  // The user who created the split and paid the money
+  totalAmount  Float   // Total amount of the split
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  assignee User @relation(fields: [assigneeId], references: [id])
   trackExpenses TrackExpense[]
+  splitParticipants SplitParticipant[] // People involved in the split
+}
+
+model SplitParticipant {
+  id              String @id @default(cuid())
+  splitId         String
+  userId          String
+  amountOwed      Float  // How much this person owes
+  isPaid          Boolean @default(false)
+  createdAt       DateTime @default(now())
+  
+  split SplitManagement @relation(fields: [splitId], references: [id], onDelete: Cascade)
+  user  User @relation(fields: [userId], references: [id])
+  
+  @@unique([splitId, userId]) // Prevent duplicate participants in same split
 }
 
 
