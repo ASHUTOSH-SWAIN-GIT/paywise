@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma/prisma';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { sendSplitNotificationEmails } from './email-actions';
 
 interface CreateSplitData {
   amount: number;
@@ -151,6 +152,26 @@ export async function createSplitAction(data: CreateSplitData): Promise<{ succes
       splitId: splitManagement.id
     });
 
+    // Send notification emails to participants (async, don't wait for completion)
+    const customAmounts: { [userId: string]: number } = {};
+    data.selectedUserIds.forEach(userId => {
+      customAmounts[userId] = getParticipantAmount(userId);
+    });
+
+    sendSplitNotificationEmails(
+      splitManagement.id,
+      data.selectedUserIds,
+      {
+        description: data.description,
+        totalAmount: data.amount,
+        creatorName: currentUser.name || currentUser.email,
+        customAmounts: data.splitType === 'custom' ? customAmounts : undefined
+      }
+    ).catch(emailError => {
+      console.error('Failed to send notification emails:', emailError);
+      // Don't fail the split creation if emails fail
+    });
+
     return { success: true, splitId: splitManagement.id };
 
   } catch (error) {
@@ -190,10 +211,21 @@ export async function getUserSplitsAction(): Promise<{ success: boolean; splits?
       return { success: false, error: 'User not found in database' };
     }
 
-    // Get all splits where the current user is the assignee (created the split)
+    // Get all splits where the current user is either the assignee (creator) OR a participant
     const splits = await prisma.splitManagement.findMany({
       where: {
-        assigneeId: authUser.id
+        OR: [
+          {
+            assigneeId: authUser.id // Splits created by the user
+          },
+          {
+            splitParticipants: {
+              some: {
+                userId: authUser.id // Splits where user is a participant
+              }
+            }
+          }
+        ]
       },
       include: {
         assignee: {
