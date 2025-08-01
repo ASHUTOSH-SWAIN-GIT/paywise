@@ -153,6 +153,10 @@ export function SplitsDisplay() {
               <span className="text-muted-foreground font-bold">Amount Pending</span>
               <span className="font-semibold">{formatCurrency(getAmountPending(split))}</span>
             </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground font-bold">Next Reminder</span>
+              <span className="font-semibold">{formatDate(split.Notification)}</span>
+            </div>
           </CardContent>
           <CardFooter>
             <p className="text-sm text-muted-foreground">{split.splitParticipants.length + 1} participants</p>

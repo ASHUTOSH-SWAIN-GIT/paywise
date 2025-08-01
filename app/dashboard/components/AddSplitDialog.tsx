@@ -24,6 +24,8 @@ interface FormData {
   selectedUsers: string[];
   notificationInterval: string;
   description: string;
+  splitType: 'equal' | 'custom';
+  customAmounts: { [userId: string]: string };
 }
 
 export function AddSplitDialog({ children }: AddSplitDialogProps) {
@@ -33,6 +35,8 @@ export function AddSplitDialog({ children }: AddSplitDialogProps) {
     selectedUsers: [],
     notificationInterval: 'weekly',
     description: '',
+    splitType: 'equal',
+    customAmounts: {},
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,12 +50,48 @@ export function AddSplitDialog({ children }: AddSplitDialogProps) {
   const totalPeople = formData.selectedUsers.length + 1; // +1 for the current user
   const amountPerPerson = formData.amount ? parseFloat(formData.amount) / totalPeople : 0;
 
+  // Calculate total of custom amounts
+  const getTotalCustomAmount = () => {
+    const customTotal = Object.values(formData.customAmounts).reduce((sum, amount) => {
+      return sum + (parseFloat(amount) || 0);
+    }, 0);
+    return customTotal;
+  };
+
+  const getRemainingAmount = () => {
+    const totalAmount = parseFloat(formData.amount) || 0;
+    const customTotal = getTotalCustomAmount();
+    return totalAmount - customTotal;
+  };
+
   const handleUserToggle = (userId: string) => {
+    setFormData(prev => {
+      const isSelected = prev.selectedUsers.includes(userId);
+      const newSelectedUsers = isSelected
+        ? prev.selectedUsers.filter(id => id !== userId)
+        : [...prev.selectedUsers, userId];
+      
+      // Remove custom amount if user is deselected
+      const newCustomAmounts = { ...prev.customAmounts };
+      if (isSelected) {
+        delete newCustomAmounts[userId];
+      }
+      
+      return {
+        ...prev,
+        selectedUsers: newSelectedUsers,
+        customAmounts: newCustomAmounts
+      };
+    });
+  };
+
+  const handleCustomAmountChange = (userId: string, amount: string) => {
     setFormData(prev => ({
       ...prev,
-      selectedUsers: prev.selectedUsers.includes(userId)
-        ? prev.selectedUsers.filter(id => id !== userId)
-        : [...prev.selectedUsers, userId]
+      customAmounts: {
+        ...prev.customAmounts,
+        [userId]: amount
+      }
     }));
   };
 
@@ -63,6 +103,17 @@ export function AddSplitDialog({ children }: AddSplitDialogProps) {
       return;
     }
 
+    // Validate custom amounts if using custom split
+    if (formData.splitType === 'custom') {
+      const totalAmount = parseFloat(formData.amount);
+      const customTotal = getTotalCustomAmount();
+      
+      if (Math.abs(customTotal - totalAmount) > 0.01) {
+        toast.error(`Custom amounts must add up to $${totalAmount.toFixed(2)}. Current total: $${customTotal.toFixed(2)}`);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -71,6 +122,8 @@ export function AddSplitDialog({ children }: AddSplitDialogProps) {
         description: formData.description || 'Expense split',
         selectedUserIds: formData.selectedUsers,
         notificationInterval: formData.notificationInterval,
+        splitType: formData.splitType,
+        customAmounts: formData.customAmounts,
       });
 
       if (result.success) {
@@ -81,6 +134,8 @@ export function AddSplitDialog({ children }: AddSplitDialogProps) {
           selectedUsers: [],
           notificationInterval: 'weekly',
           description: '',
+          splitType: 'equal',
+          customAmounts: {},
         });
         setSearchQuery('');
         
@@ -156,6 +211,35 @@ export function AddSplitDialog({ children }: AddSplitDialogProps) {
             />
           </div>
 
+          {/* Split Type Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-300">Split Type</label>
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, splitType: 'equal', customAmounts: {} }))}
+                className={`flex-1 px-3 py-2 text-sm rounded-lg border-2 transition-colors ${
+                  formData.splitType === 'equal' 
+                    ? 'bg-white text-black border-white' 
+                    : 'bg-black text-gray-300 border-gray-700 hover:border-gray-600'
+                }`}
+              >
+                Equal Split
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, splitType: 'custom' }))}
+                className={`flex-1 px-3 py-2 text-sm rounded-lg border-2 transition-colors ${
+                  formData.splitType === 'custom' 
+                    ? 'bg-white text-black border-white' 
+                    : 'bg-black text-gray-300 border-gray-700 hover:border-gray-600'
+                }`}
+              >
+                Custom Amounts
+              </button>
+            </div>
+          </div>
+
           {/* User Search and Selection */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-300">Split with</label>
@@ -180,18 +264,43 @@ export function AddSplitDialog({ children }: AddSplitDialogProps) {
               ) : filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => {
                   const isSelected = formData.selectedUsers.includes(user.id);
+                  const customAmount = formData.customAmounts[user.id] || '';
                   return (
                     <div
                       key={user.id}
-                      className={`flex items-center space-x-3 p-3 cursor-pointer transition-colors ${isSelected ? 'bg-gray-800' : 'hover:bg-gray-900'}`}
-                      onClick={() => handleUserToggle(user.id)}
+                      className={`p-3 transition-colors ${isSelected ? 'bg-gray-800' : 'hover:bg-gray-900'}`}
                     >
-                      <div className={`flex h-5 w-5 items-center justify-center rounded border ${isSelected ? 'border-white bg-white' : 'border-gray-600'}`}>
-                        {isSelected && <Check className="h-4 w-4 text-black" />}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">{user.name || 'Unknown User'}</p>
-                        <p className="text-xs text-gray-400">{user.email}</p>
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className={`flex h-5 w-5 items-center justify-center rounded border cursor-pointer ${isSelected ? 'border-white bg-white' : 'border-gray-600'}`}
+                          onClick={() => handleUserToggle(user.id)}
+                        >
+                          {isSelected && <Check className="h-4 w-4 text-black" />}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-white">{user.name || 'Unknown User'}</p>
+                          <p className="text-xs text-gray-400">{user.email}</p>
+                        </div>
+                        {/* Custom Amount Input */}
+                        {isSelected && formData.splitType === 'custom' && (
+                          <div className="flex items-center space-x-2">
+                            <DollarSign className="h-3 w-3 text-gray-500" />
+                            <input
+                              type="number"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={customAmount}
+                              onChange={(e) => handleCustomAmountChange(user.id, e.target.value)}
+                              className="w-20 px-2 py-1 text-xs bg-black border border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-white focus:border-white"
+                            />
+                          </div>
+                        )}
+                        {/* Equal Split Amount Display */}
+                        {isSelected && formData.splitType === 'equal' && formData.amount && (
+                          <div className="text-xs text-gray-400">
+                            ${amountPerPerson.toFixed(2)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -202,6 +311,26 @@ export function AddSplitDialog({ children }: AddSplitDialogProps) {
                 </div>
               )}
             </div>
+            
+            {/* Custom Split Summary */}
+            {formData.splitType === 'custom' && formData.selectedUsers.length > 0 && formData.amount && (
+              <div className="text-xs text-gray-400 bg-gray-900/50 p-2 rounded-md">
+                <div className="flex justify-between">
+                  <span>Total amount:</span>
+                  <span>${parseFloat(formData.amount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Assigned amount:</span>
+                  <span>${getTotalCustomAmount().toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Remaining:</span>
+                  <span className={getRemainingAmount() < 0 ? 'text-red-400' : 'text-white'}>
+                    ${getRemainingAmount().toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Notification Interval */}

@@ -9,6 +9,8 @@ interface CreateSplitData {
   description: string;
   selectedUserIds: string[];
   notificationInterval: string;
+  splitType?: 'equal' | 'custom';
+  customAmounts?: { [userId: string]: string };
 }
 
 export async function createSplitAction(data: CreateSplitData): Promise<{ success: boolean; error?: string; splitId?: string }> {
@@ -58,6 +60,14 @@ export async function createSplitAction(data: CreateSplitData): Promise<{ succes
     // Calculate split amount per person (including the current user)
     const totalPeople = data.selectedUserIds.length + 1; // +1 for current user
     const amountPerPerson = data.amount / totalPeople;
+    
+    // Determine amounts for each participant based on split type
+    const getParticipantAmount = (userId: string): number => {
+      if (data.splitType === 'custom' && data.customAmounts && data.customAmounts[userId]) {
+        return parseFloat(data.customAmounts[userId]);
+      }
+      return amountPerPerson;
+    };
 
     // Calculate notification date based on interval
     const getNotificationDate = (interval: string): Date => {
@@ -92,11 +102,12 @@ export async function createSplitAction(data: CreateSplitData): Promise<{ succes
     // Create SplitParticipant records for each person who owes money
     const splitParticipants = await Promise.all(
       data.selectedUserIds.map(async (userId) => {
+        const participantAmount = getParticipantAmount(userId);
         return prisma.splitParticipant.create({
           data: {
             splitId: splitManagement.id,
             userId: userId,
-            amountOwed: amountPerPerson,
+            amountOwed: participantAmount,
             isPaid: false,
           }
         });

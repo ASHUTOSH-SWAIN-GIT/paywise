@@ -1,7 +1,9 @@
-import { Plus, User, LogOut } from "lucide-react";
+import {  User, LogOut } from "lucide-react";
 import { ActionButton } from "./ui/ActionButton";
 import { useUser } from '@/lib/context/user-context';
 import { useState } from 'react';
+import { uploadQRCodeAction } from '@/lib/actions/upload-actions';
+import { toast } from 'sonner';
 
 export const Header = () => {
   const { user, signOut } = useUser();
@@ -10,6 +12,50 @@ export const Header = () => {
   const handleSignOut = async () => {
     await signOut();
     setShowUserMenu(false);
+  };
+
+  const handleQRUpload = async () => {
+    if (!user?.id) {
+      toast.error('Please log in to upload QR codes');
+      return;
+    }
+
+    // Create a file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        try {
+          toast.loading('Uploading QR code...');
+          
+          // Create FormData for server action
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          // Upload using server action
+          const result = await uploadQRCodeAction(formData);
+          
+          // Dismiss loading toast first
+          toast.dismiss();
+          
+          if (result.success) {
+            toast.success('QR code uploaded successfully!');
+            console.log('QR code uploaded to:', result.filePath);
+            console.log('QR code public URL:', result.publicUrl);
+          } else {
+            toast.error(result.error || 'Failed to upload QR code');
+          }
+        } catch (error) {
+          // Dismiss loading toast first
+          toast.dismiss();
+          console.error('Error uploading QR code:', error);
+          toast.error('Failed to upload QR code');
+        }
+      }
+    };
+    input.click();
   };
 
   return (
@@ -21,9 +67,9 @@ export const Header = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <ActionButton onClick={() => { /* TODO: handle quick add */ }}>
-            <Plus className="w-4 h-4"/>
-            <span>Quick Add</span>
+          <ActionButton onClick={handleQRUpload}>
+           
+            <span>Upload QR</span>
           </ActionButton>
 
           <div className="relative">

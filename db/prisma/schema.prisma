@@ -23,7 +23,7 @@ model User {
   phoneVerified Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  QrCode        String
+  QrCode        String?
 
   splitManagement SplitManagement[]
   splitParticipants SplitParticipant[]
