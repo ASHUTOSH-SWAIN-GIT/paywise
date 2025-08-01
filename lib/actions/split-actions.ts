@@ -176,9 +176,61 @@ export async function createSplitAction(data: CreateSplitData): Promise<{ succes
 
   } catch (error) {
     console.error('Error creating split:', error);
-    return { success: false, error: 'Failed to create split' };
+    return { success: false, error: 'Failed to update QR code' };
   }
 }
+
+export async function closeSplitAction(splitId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    // Get the authenticated user
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !authUser) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    // Verify the user is the creator of the split
+    const split = await prisma.splitManagement.findUnique({
+      where: { id: splitId },
+      select: { assigneeId: true }
+    });
+
+    if (!split) {
+      return { success: false, error: 'Split not found' };
+    }
+
+    if (split.assigneeId !== authUser.id) {
+      return { success: false, error: 'Only the creator can close this split' };
+    }
+
+    // Delete the split and all related data (cascade will handle related records)
+    await prisma.splitManagement.delete({
+      where: { id: splitId }
+    });
+
+    console.log('Split closed and deleted:', splitId);
+    return { success: true };
+
+  } catch (error) {
+    console.error('Error closing split:', error);
+    return { success: false, error: 'Failed to close split' };
+  }
+}
+  
+
 
 export async function getUserSplitsAction(): Promise<{ success: boolean; splits?: any[]; error?: string }> {
   try {

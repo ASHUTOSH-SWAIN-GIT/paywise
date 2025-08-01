@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { getUserSplitsAction } from '@/lib/actions/split-actions';
+import { getUserSplitsAction, closeSplitAction } from '@/lib/actions/split-actions';
 import { useUser } from '@/lib/context/user-context';
 import { toast } from 'sonner';
 import {
@@ -141,19 +141,86 @@ export function SplitsDisplay() {
     }
   };
 
+  const handleCloseSplit = async (splitId: string, splitDescription: string) => {
+    // Confirm with the user before closing
+    const confirmed = window.confirm(
+      `Are you sure you want to close the split "${splitDescription}"? This action cannot be undone and will remove all split data.`
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      toast.loading('Closing split...');
+      
+      const result = await closeSplitAction(splitId);
+      
+      toast.dismiss();
+      
+      if (result.success) {
+        toast.success('Split closed successfully!');
+        // Refresh the splits list
+        const updatedResult = await getUserSplitsAction();
+        if (updatedResult.success && updatedResult.splits) {
+          setSplits(updatedResult.splits);
+        }
+      } else {
+        toast.error(result.error || 'Failed to close split');
+      }
+    } catch (error) {
+      toast.dismiss();
+      console.error('Error closing split:', error);
+      toast.error('Failed to close split');
+    }
+  };
+
   if (loading) {
     return (
-      <Card className="w-full max-w-sm border-2">
-        <CardHeader>
-          <CardTitle>Loading Splits...</CardTitle>
-          <CardDescription>Please wait while we fetch your data.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Skeleton cards */}
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="w-full border-4 animate-pulse">
+            <CardHeader>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <div className="h-5 bg-black/20 rounded w-3/4"></div>
+                  <div className="h-4 bg-black/30 rounded w-16"></div>
+                </div>
+                <div className="h-4 bg-black/10 rounded w-1/2"></div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="h-4 bg-black/10 rounded w-1/3"></div>
+                <div className="h-4 bg-black/20 rounded w-1/4"></div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="h-4 bg-black/10 rounded w-1/3"></div>
+                <div className="h-4 bg-black/20 rounded w-1/4"></div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="h-4 bg-black/10 rounded w-1/3"></div>
+                <div className="h-4 bg-black/20 rounded w-1/4"></div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between items-center">
+              <div className="h-4 bg-black/10 rounded w-1/4"></div>
+              <div className="h-8 bg-black/20 rounded w-24"></div>
+            </CardFooter>
+          </Card>
+        ))}
+        
+        {/* Loading overlay with spinner */}
+        <div className="col-span-full flex flex-col items-center justify-center py-8 space-y-4">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-black/20"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-black border-t-transparent absolute top-0 left-0"></div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-semibold text-black">Loading Your Splits</h3>
+            <p className="text-sm text-black/60">Fetching your expense data...</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -235,7 +302,7 @@ export function SplitsDisplay() {
           </CardContent>
           <CardFooter className="flex justify-between items-center">
             <p className="text-sm text-muted-foreground">{split.splitParticipants.length + 1} participants</p>
-            {!isUserCreator(split) && (
+            {!isUserCreator(split) ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -244,6 +311,15 @@ export function SplitsDisplay() {
               >
                 <Download className="h-4 w-4" />
                 Download QR
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleCloseSplit(split.id, split.description)}
+                className="flex items-center gap-2 bg-white text-black font-bold cursor-pointer"
+              >
+                Close Split
               </Button>
             )}
           </CardFooter>
