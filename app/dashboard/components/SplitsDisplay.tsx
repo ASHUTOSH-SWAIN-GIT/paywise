@@ -13,7 +13,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { 
+  Download, 
+  Users, 
+  CalendarClock, 
+  CircleDollarSign, 
+  Landmark, 
+  CheckCircle2, 
+  FileX2, 
+  AlertTriangle,
+  ReceiptText,
+  Hourglass,
+  BadgeInfo
+} from "lucide-react";
 
 interface Split {
   id: string;
@@ -111,220 +123,225 @@ export function SplitsDisplay() {
   };
 
   const handleDownloadQR = async (split: Split) => {
+    toast.loading('Checking for QR code...');
     try {
-      toast.loading('Checking for QR code...');
-      
-      // Import the server action dynamically
       const { getCreatorQRCodeAction } = await import('@/lib/actions/qr-actions');
       const result = await getCreatorQRCodeAction(split.assignee.id);
       
       toast.dismiss();
       
       if (result.success && result.qrCodeUrl) {
-        // Create a temporary link to download the QR code
         const link = document.createElement('a');
         link.href = result.qrCodeUrl;
-        link.download = `qr-code-${split.description}.jpg`;
+        link.download = `qr-code-${split.description.replace(/\s+/g, '-')}.jpg`;
         link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        toast.success('QR code downloaded successfully!');
+        toast.success('QR code download started!');
       } else {
-        toast.error(result.error || 'QR code not uploaded by creator');
+        toast.error(result.error || 'Creator has not uploaded a QR code.');
       }
     } catch (error) {
       toast.dismiss();
       console.error('Error downloading QR code:', error);
-      toast.error('Failed to download QR code');
+      toast.error('Failed to download QR code.');
     }
   };
 
   const handleCloseSplit = async (splitId: string, splitDescription: string) => {
-    // Confirm with the user before closing
     const confirmed = window.confirm(
-      `Are you sure you want to close the split "${splitDescription}"? This action cannot be undone and will remove all split data.`
+      `Are you sure you want to close the split "${splitDescription}"? This action is permanent and will delete all associated data.`
     );
     
     if (!confirmed) return;
 
+    toast.loading('Closing split...');
     try {
-      toast.loading('Closing split...');
-      
       const result = await closeSplitAction(splitId);
-      
       toast.dismiss();
       
       if (result.success) {
         toast.success('Split closed successfully!');
-        // Refresh the splits list
-        const updatedResult = await getUserSplitsAction();
-        if (updatedResult.success && updatedResult.splits) {
-          setSplits(updatedResult.splits);
-        }
+        setSplits(prevSplits => prevSplits.filter(s => s.id !== splitId));
       } else {
-        toast.error(result.error || 'Failed to close split');
+        toast.error(result.error || 'Failed to close split.');
       }
     } catch (error) {
       toast.dismiss();
       console.error('Error closing split:', error);
-      toast.error('Failed to close split');
+      toast.error('Failed to close split.');
     }
   };
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Skeleton cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="w-full border-4 animate-pulse">
+          <Card key={i} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm animate-pulse">
             <CardHeader>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <div className="h-5 bg-black/20 rounded w-3/4"></div>
-                  <div className="h-4 bg-black/30 rounded w-16"></div>
-                </div>
-                <div className="h-4 bg-black/10 rounded w-1/2"></div>
+              <div className="flex justify-between items-start gap-2">
+                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+                <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-16"></div>
               </div>
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mt-1"></div>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-4">
               <div className="flex justify-between items-center">
-                <div className="h-4 bg-black/10 rounded w-1/3"></div>
-                <div className="h-4 bg-black/20 rounded w-1/4"></div>
+                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
+                <div className="h-5 bg-slate-300 dark:bg-slate-600 rounded w-1/4"></div>
               </div>
-              <div className="flex justify-between items-center">
-                <div className="h-4 bg-black/10 rounded w-1/3"></div>
-                <div className="h-4 bg-black/20 rounded w-1/4"></div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="h-4 bg-black/10 rounded w-1/3"></div>
-                <div className="h-4 bg-black/20 rounded w-1/4"></div>
+              <div className="bg-slate-100 dark:bg-slate-800/50 p-3 rounded-lg space-y-3">
+                 <div className="flex justify-between items-center">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
+                  <div className="h-5 bg-slate-300 dark:bg-slate-600 rounded w-1/4"></div>
+                </div>
+                 <div className="flex justify-between items-center">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
+                  <div className="h-5 bg-slate-300 dark:bg-slate-600 rounded w-1/4"></div>
+                </div>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between items-center">
-              <div className="h-4 bg-black/10 rounded w-1/4"></div>
-              <div className="h-8 bg-black/20 rounded w-24"></div>
+            <CardFooter className="border-t border-slate-200 dark:border-slate-800 pt-3 pb-3 flex justify-between items-center">
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
+              <div className="h-9 bg-slate-300 dark:bg-slate-700 rounded-md w-28"></div>
             </CardFooter>
           </Card>
         ))}
-        
-        {/* Loading overlay with spinner */}
-        <div className="col-span-full flex flex-col items-center justify-center py-8 space-y-4">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-black/20"></div>
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-black border-t-transparent absolute top-0 left-0"></div>
-          </div>
-          <div className="text-center space-y-2">
-            <h3 className="text-lg font-semibold text-black">Loading Your Splits</h3>
-            <p className="text-sm text-black/60">Fetching your expense data...</p>
-          </div>
-        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <Card className="w-full max-w-sm border-destructive">
-        <CardHeader>
-          <CardTitle className="text-destructive">Error</CardTitle>
-          <CardDescription className="text-destructive">
-            {error}
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="flex flex-col items-center justify-center text-center py-16 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-red-500/50">
+        <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
+        <h3 className="text-xl font-semibold text-red-600 dark:text-red-500">An Error Occurred</h3>
+        <p className="text-slate-600 dark:text-slate-400 mt-2 max-w-md">{error}</p>
+      </div>
     );
   }
 
   if (splits.length === 0) {
     return (
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>No Splits Found</CardTitle>
-          <CardDescription>
-            You haven't created or been added to any splits yet.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="flex flex-col items-center justify-center text-center py-16 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+        <FileX2 className="h-12 w-12 text-slate-400 dark:text-slate-500 mb-4" />
+        <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">No Splits Found</h3>
+        <p className="text-slate-600 dark:text-slate-400 mt-2 max-w-md">
+          You haven't created or been added to any splits yet.
+          <br />
+          Start by creating a new split from your dashboard!
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ">
-      {splits.map((split) => (
-        <Card key={split.id} className="w-full border-4">
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-              <span>{split.description}</span>
-              {isUserCreator(split) ? (
-                <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded">Creator</span>
-              ) : (
-                <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">Participant</span>
-              )}
-            </CardTitle>
-            <CardDescription>
-              {isUserCreator(split) ? (
-                <>Created on {formatDate(split.createdAt)}</>
-              ) : (
-                <>Created by {split.assignee.name || split.assignee.email} on {formatDate(split.createdAt)}</>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-2">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground font-bold">Total Amount</span>
-              <span className="font-semibold">{formatCurrency(split.totalAmount)}</span>
-            </div>
-            {isUserCreator(split) ? (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-bold">Amount Pending</span>
-                <span className="font-semibold">{formatCurrency(getAmountPending(split))}</span>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {splits.map((split) => {
+        const creator = isUserCreator(split);
+        const userPaid = isUserPaid(split);
+        
+        return (
+          <Card key={split.id} className="w-full flex flex-col bg-black border border-slate-800 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="flex justify-between items-start gap-2">
+                <CardTitle className="text-lg font-bold text-slate-100">{split.description}</CardTitle>
+                {creator ? (
+                  <span className="text-xs font-semibold bg-sky-500/20 text-sky-300 px-2.5 py-1 rounded-full">Creator</span>
+                ) : (
+                  <span className="text-xs font-semibold bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full">Participant</span>
+                )}
               </div>
-            ) : (
-              <>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-bold">Your Share</span>
-                  <span className="font-semibold">{formatCurrency(getUserAmountOwed(split))}</span>
+              <CardDescription className="text-sm text-slate-400 !mt-1">
+                {creator ? `Created on ${formatDate(split.createdAt)}` : `By ${split.assignee.name || split.assignee.email}`}
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="flex-grow border-t border-slate-800 pt-4 grid gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-slate-400">
+                  <ReceiptText className="h-4 w-4" />
+                  <span className="text-sm font-medium">Total Bill</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-bold">Status</span>
-                  <span className={`font-semibold ${isUserPaid(split) ? 'text-green-500' : 'text-red-500'}`}>
-                    {isUserPaid(split) ? 'Paid' : 'Pending'}
-                  </span>
+                <span className="font-semibold text-slate-100 text-base">{formatCurrency(split.totalAmount)}</span>
+              </div>
+              
+              {/* User-specific section */}
+              <div className="bg-slate-800/50 p-4 rounded-lg space-y-3">
+                {creator ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-slate-300">
+                      <Landmark className="h-4 w-4" />
+                      <span className="text-sm font-medium">Amount Pending</span>
+                    </div>
+                    <span className="font-semibold text-sky-400">{formatCurrency(getAmountPending(split))}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-slate-300">
+                        <CircleDollarSign className="h-4 w-4" />
+                        <span className="text-sm font-medium">Your Share</span>
+                      </div>
+                      <span className="font-semibold text-slate-50">{formatCurrency(getUserAmountOwed(split))}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2 text-slate-300">
+                        <BadgeInfo className="h-4 w-4" />
+                        <span className="text-sm font-medium">Status</span>
+                      </div>
+                      {userPaid ? (
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-400">
+                          <CheckCircle2 className="h-4 w-4" /> Paid
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-amber-500">
+                          <Hourglass className="h-4 w-4" /> Pending
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-slate-400">
+                  <CalendarClock className="h-4 w-4" />
+                  <span className="text-sm font-medium">Next Reminder</span>
                 </div>
-              </>
-            )}
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground font-bold">Next Reminder</span>
-              <span className="font-semibold">{formatDate(split.Notification)}</span>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between items-center">
-            <p className="text-sm text-muted-foreground">{split.splitParticipants.length + 1} participants</p>
-            {!isUserCreator(split) ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDownloadQR(split)}
-                className="flex items-center gap-2 bg-white text-black font-bold"
-              >
-                <Download className="h-4 w-4" />
-                Download QR
-              </Button>
-            ) : (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleCloseSplit(split.id, split.description)}
-                className="flex items-center gap-2 bg-white text-black font-bold cursor-pointer"
-              >
-                Close Split
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-      ))}
+                <span className="font-medium text-slate-300 text-sm">{formatDate(split.Notification)}</span>
+              </div>
+            </CardContent>
+
+            <CardFooter className="border-t border-slate-800 pt-3 pb-3 flex justify-between items-center mt-auto">
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Users className="h-4 w-4" />
+                <span>{split.splitParticipants.length + 1} participants</span>
+              </div>
+              {!creator ? (
+                <Button
+                  size="sm"
+                  onClick={() => handleDownloadQR(split)}
+                  className="flex items-center gap-2 bg-slate-50 text-slate-900 hover:bg-slate-200"
+                >
+                  <Download className="h-4 w-4" />
+                  Pay with QR
+                </Button>
+              ) : (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className='bg-white text-black font-sans'
+                  onClick={() => handleCloseSplit(split.id, split.description)}
+                >
+                  Close Split
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        );
+      })}
     </div>
   );
 }
