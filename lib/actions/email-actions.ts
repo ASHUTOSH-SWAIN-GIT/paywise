@@ -101,8 +101,8 @@ export async function sendRecurringPaymentReminder(
       userEmail: recurringPayment.user.email,
       userName: recurringPayment.user.name || 'User',
       description: recurringPayment.description,
-      provider: recurringPayment.provider,
-      dueDate: new Date(recurringPayment.Notification).toLocaleDateString('en-US', {
+      provider: recurringPayment.paymentLink ?? '',
+      dueDate: new Date(recurringPayment.frequency).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'

@@ -91,3 +91,33 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Date input specific styles for dark theme */
+input[type="date"] {
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(2);
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-datetime-edit {
+  color: white;
+}
+
+input[type="date"]::-webkit-datetime-edit-text {
+  color: rgb(148 163 184); /* slate-400 */
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field {
+  color: white;
+}
+
+input[type="date"]::-webkit-datetime-edit-day-field {
+  color: white;
+}
+
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: white;
+}

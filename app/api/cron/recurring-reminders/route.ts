@@ -15,13 +15,39 @@ export async function GET(request: NextRequest) {
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Find recurring payments that are due within the next 24 hours
-    const dueRecurringPayments = await prisma.reccuringPayments.findMany({
-      where: {
-        Notification: {
-          gte: now,
-          lte: tomorrow
+    // Find recurring payments that are due based on their frequency
+    // This is a simplified approach - in production you'd want more sophisticated scheduling
+    const allRecurringPayments = await prisma.reccuringPayments.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
         }
+      }
+    });
+
+    // Filter payments that are due for reminder
+    const dueRecurringPayments = allRecurringPayments.filter(payment => {
+      const startDate = new Date(payment.startDate);
+      const daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Simple frequency check - in production you'd want more sophisticated logic
+      switch (payment.frequency) {
+        case 'weekly':
+          return daysSinceStart % 7 === 0;
+        case 'biweekly':
+          return daysSinceStart % 14 === 0;
+        case 'monthly':
+          return daysSinceStart % 30 === 0; // Simplified - should use actual month calculation
+        case 'quarterly':
+          return daysSinceStart % 90 === 0; // Simplified
+        case 'yearly':
+          return daysSinceStart % 365 === 0; // Simplified
+        default:
+          return false;
       }
     });
 

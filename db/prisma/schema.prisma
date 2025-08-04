@@ -27,7 +27,7 @@ model User {
 
   splitManagement SplitManagement[]
   splitParticipants SplitParticipant[]
-  reccuringPayments ReccuringPayments?
+  reccuringPayments ReccuringPayments[]
   trackExpenses TrackExpense[]
 
 }
@@ -64,11 +64,16 @@ model SplitParticipant {
 model ReccuringPayments {
   id String @id @default(cuid())
   description String 
-  provider String
-  Notification DateTime
-  SendNotifto String @unique
+  amount Float // Monthly/recurring amount
+  category String // Category from dropdown (Utilities, Rent, etc.)
+  startDate DateTime // When the recurring payment starts
+  frequency String // weekly, biweekly, monthly, quarterly, yearly
+  paymentLink String? // URL for direct payment from notification emails
+  userId String // User who created this recurring payment
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [SendNotifto] , references: [email])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   trackExpenses TrackExpense[]
 }
 
