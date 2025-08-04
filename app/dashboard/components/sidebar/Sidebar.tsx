@@ -1,21 +1,15 @@
 import { 
   Split, 
   RefreshCw, 
-  TrendingUp,
-  ChevronLeft,
-  ChevronRight
+  TrendingUp
 } from "lucide-react";
 
 type SidebarProps = {
-  sidebarCollapsed: boolean;
-  setSidebarCollapsed: (collapsed: boolean) => void;
   activeSection: string;
   setActiveSection: (section: string) => void;
 };
 
 export const Sidebar = ({ 
-  sidebarCollapsed, 
-  setSidebarCollapsed, 
   activeSection, 
   setActiveSection 
 }: SidebarProps) => {
@@ -41,28 +35,16 @@ export const Sidebar = ({
   ];
 
   return (
-    <div className={`bg-neutral-900 border-r border-neutral-800 transition-all duration-300 ease-in-out flex flex-col ${
-      sidebarCollapsed ? "w-20" : "w-64"
-    }`}>
+    <div className="bg-neutral-900 border-r border-neutral-800 w-24 flex flex-col">
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-neutral-800 flex items-center justify-between h-20">
-        {!sidebarCollapsed && (
-          <h1 className="text-xl font-bold text-white">Paywise</h1>
-        )}
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="p-2 rounded-lg hover:bg-neutral-800 transition-colors"
-        >
-          {sidebarCollapsed ? (
-            <ChevronRight className="w-5 h-5 text-neutral-400" />
-          ) : (
-            <ChevronLeft className="w-5 h-5 text-neutral-400" />
-          )}
-        </button>
+      <div className="p-4 border-b border-neutral-800 flex items-center justify-center h-20">
+        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+          <span className="text-black font-bold text-sm">P</span>
+        </div>
       </div>
 
       {/* Sidebar Navigation */}
-      <nav className="p-4 space-y-2 flex-1">
+      <nav className="p-2 space-y-3 flex-1">
         {sidebarItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -71,24 +53,19 @@ export const Sidebar = ({
             <button
               key={item.id}
               onClick={() => setActiveSection(item.id)}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
+              className={`w-full flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 ${
                 isActive 
                   ? "bg-white text-black" 
                   : "text-neutral-400 hover:bg-neutral-800 hover:text-white"
-              } ${sidebarCollapsed ? "justify-center" : ""}`}
-              title={sidebarCollapsed ? item.label : ""}
+              }`}
+              title={item.label}
             >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              {!sidebarCollapsed && (
-                <div className="text-left">
-                  <div className="font-semibold">{item.label}</div>
-                  <div className={`text-xs ${
-                    isActive ? "text-neutral-600" : "text-neutral-500"
-                  }`}>
-                    {item.description}
-                  </div>
-                </div>
-              )}
+              <Icon className="w-5 h-5" />
+              <span className="text-xs font-medium leading-tight text-center">
+                {item.id === "split-management" && "Split"}
+                {item.id === "recurring-payments" && "Recurring"}
+                {item.id === "track-expense" && "Track"}
+              </span>
             </button>
           );
         })}

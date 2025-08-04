@@ -6,14 +6,11 @@ import { Header } from "./components/Header";
 import { MainContent } from "./components/MainContent";
 
 export default function Dashboard() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState("split-management");
 
   return (
     <div className="min-h-screen bg-black text-neutral-300 flex">
       <Sidebar 
-        sidebarCollapsed={sidebarCollapsed}
-        setSidebarCollapsed={setSidebarCollapsed}
         activeSection={activeSection}
         setActiveSection={setActiveSection}
       />
