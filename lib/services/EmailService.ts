@@ -128,4 +128,66 @@ export class EmailService {
       return { success: false, error: 'Failed to send email' };
     }
   }
+
+  static async sendRecurringPaymentCreated(data: {
+    email: string;
+    userName: string;
+    description: string;
+    amount: number;
+    frequency: string;
+    category: string;
+    firstPaymentDate: string;
+    nextDueDate: string;
+  }) {
+    try {
+      const { data: emailData, error } = await resend.emails.send({
+        from: getFromEmail(),
+        to: [data.email],
+        subject: `Recurring Payment Created: ${data.description}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333; border-bottom: 2px solid #28a745; padding-bottom: 10px;">
+              Recurring Payment Created Successfully
+            </h2>
+            
+            <p>Hi ${data.userName},</p>
+            <p>Your recurring payment has been successfully created with the following details:</p>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #333; margin-top: 0;">Payment Details</h3>
+              <p><strong>Description:</strong> ${data.description}</p>
+              <p><strong>Amount:</strong> $${data.amount.toFixed(2)}</p>
+              <p><strong>Frequency:</strong> ${data.frequency}</p>
+              <p><strong>Category:</strong> ${data.category}</p>
+              <p><strong>First Payment Date:</strong> ${data.firstPaymentDate}</p>
+              <p><strong>Next Due Date:</strong> ${data.nextDueDate}</p>
+            </div>
+            
+            <p>We'll send you reminders before each payment is due to help you stay on top of your finances.</p>
+            
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/recurring" 
+               style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 20px 0;">
+              View Recurring Payments
+            </a>
+            
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+              This is an automated confirmation from Paywise. You can manage your recurring payments in your dashboard.
+            </p>
+          </div>
+        `,
+      });
+
+      if (error) {
+        console.error('Error sending recurring payment creation email:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('Recurring payment creation email sent successfully:', emailData?.id);
+      return { success: true, emailId: emailData?.id };
+
+    } catch (error) {
+      console.error('Error sending recurring payment creation email:', error);
+      return { success: false, error: 'Failed to send email' };
+    }
+  }
 }

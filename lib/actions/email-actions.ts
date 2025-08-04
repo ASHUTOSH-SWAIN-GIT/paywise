@@ -121,3 +121,119 @@ export async function sendRecurringPaymentReminder(
     return { success: false, error: 'Failed to send reminder email' };
   }
 }
+
+// Helper function to calculate next due date
+function calculateNextDueDate(startDate: Date, frequency: string): Date {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  
+  // If start date is in the future, return it
+  if (start > today) {
+    return start;
+  }
+  
+  let nextDate = new Date(start);
+  
+  // Calculate how many periods have passed since start date
+  while (nextDate <= today) {
+    switch (frequency) {
+      case 'weekly':
+        nextDate.setDate(nextDate.getDate() + 7);
+        break;
+      case 'biweekly':
+        nextDate.setDate(nextDate.getDate() + 14);
+        break;
+      case 'monthly':
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        break;
+      case 'quarterly':
+        nextDate.setMonth(nextDate.getMonth() + 3);
+        break;
+      case 'yearly':
+        nextDate.setFullYear(nextDate.getFullYear() + 1);
+        break;
+      default:
+        // Default to monthly if frequency is invalid
+        nextDate.setMonth(nextDate.getMonth() + 1);
+    }
+  }
+  
+  return nextDate;
+}
+
+export async function sendDailyRecurringPaymentReminders(): Promise<{ success: boolean; error?: string; sentCount?: number }> {
+  try {
+    // Get tomorrow's date for comparison
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0); // Start of tomorrow
+
+    const dayAfterTomorrow = new Date(tomorrow);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1); // End of tomorrow
+
+    // Get all active recurring payments
+    const recurringPayments = await prisma.reccuringPayments.findMany({
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    // Filter payments that are due tomorrow
+    const paymentsDueTomorrow = recurringPayments.filter(payment => {
+      const nextDueDate = calculateNextDueDate(payment.startDate, payment.frequency);
+      
+      // Check if the calculated due date falls on tomorrow
+      return nextDueDate >= tomorrow && nextDueDate < dayAfterTomorrow;
+    });
+
+    if (paymentsDueTomorrow.length === 0) {
+      console.log('No recurring payments due tomorrow');
+      return { success: true, sentCount: 0 };
+    }
+
+    // Send reminder emails
+    const emailPromises = paymentsDueTomorrow.map(async (payment) => {
+      const nextDueDate = calculateNextDueDate(payment.startDate, payment.frequency);
+      
+      return EmailService.sendRecurringPaymentReminder({
+        userEmail: payment.user.email,
+        userName: payment.user.name || 'User',
+        description: payment.description,
+        provider: payment.paymentLink ?? '',
+        dueDate: nextDueDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      });
+    });
+
+    const results = await Promise.all(emailPromises);
+    
+    // Check if any emails failed
+    const failures = results.filter(result => !result.success);
+    if (failures.length > 0) {
+      console.error('Some reminder emails failed to send:', failures);
+      return { 
+        success: false, 
+        error: `${failures.length} reminder emails failed to send`,
+        sentCount: results.length - failures.length
+      };
+    }
+
+    console.log(`Successfully sent ${results.length} recurring payment reminder emails`);
+    return { success: true, sentCount: results.length };
+
+  } catch (error) {
+    console.error('Error sending daily recurring payment reminders:', error);
+    return { success: false, error: 'Failed to send daily reminders' };
+  }
+}

@@ -1,6 +1,35 @@
 'use server';
 
 import { prisma } from '@/lib/prisma/prisma';
+import { EmailService } from '@/lib/services/EmailService';
+
+// Helper function to calculate next due date
+function calculateNextDueDate(startDate: Date, frequency: string): Date {
+  const date = new Date(startDate);
+  
+  switch (frequency) {
+    case 'weekly':
+      date.setDate(date.getDate() + 7);
+      break;
+    case 'biweekly':
+      date.setDate(date.getDate() + 14);
+      break;
+    case 'monthly':
+      date.setMonth(date.getMonth() + 1);
+      break;
+    case 'quarterly':
+      date.setMonth(date.getMonth() + 3);
+      break;
+    case 'yearly':
+      date.setFullYear(date.getFullYear() + 1);
+      break;
+    default:
+      // Default to monthly if frequency is invalid
+      date.setMonth(date.getMonth() + 1);
+  }
+  
+  return date;
+}
 
 interface CreateRecurringBillData {
   description: string;
@@ -53,6 +82,28 @@ export async function createRecurringBillAction(data: CreateRecurringBillData) {
     });
 
     console.log('Recurring bill created successfully:', recurringBill.id);
+
+    // Send confirmation email
+    try {
+      const nextDueDate = calculateNextDueDate(recurringBill.startDate, recurringBill.frequency);
+      
+      await EmailService.sendRecurringPaymentCreated({
+        email: recurringBill.user.email,
+        userName: recurringBill.user.name || 'User',
+        description: recurringBill.description,
+        amount: recurringBill.amount,
+        frequency: recurringBill.frequency,
+        category: recurringBill.category,
+        firstPaymentDate: recurringBill.startDate.toLocaleDateString(),
+        nextDueDate: nextDueDate.toLocaleDateString(),
+      });
+      
+      console.log('Confirmation email sent for recurring bill:', recurringBill.id);
+    } catch (emailError) {
+      // Log email error but don't fail the creation
+      console.error('Failed to send confirmation email:', emailError);
+    }
+
     return { success: true, recurringBill };
 
   } catch (error) {
