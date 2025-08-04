@@ -42,7 +42,6 @@ model SplitManagement {
   updatedAt    DateTime @updatedAt
   
   assignee User @relation(fields: [assigneeId], references: [id])
-  trackExpenses TrackExpense[]
   splitParticipants SplitParticipant[] // People involved in the split
 }
 
@@ -74,7 +73,6 @@ model ReccuringPayments {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trackExpenses TrackExpense[]
 }
 
 
@@ -83,10 +81,8 @@ model TrackExpense {
   amount      Float
   description String
   category    String   // e.g., "Food", "Transportation", "Entertainment", "Bills", etc.
-  date        DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
   
   // Receipt/proof
   receiptUrl  String?  // URL to uploaded receipt image
@@ -94,26 +90,11 @@ model TrackExpense {
   // Tags for better organization
   tags        String[] // Array of custom tags
   
-  // Expense type
-  isRecurring Boolean  @default(false)
-  recurringId String?  // Link to recurring expense if applicable
-  
   // User relation
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Split Management relation (optional - if expense is part of a split)
-  splitManagementId String?
-  splitManagement   SplitManagement? @relation(fields: [splitManagementId], references: [id])
-  
-  // Recurring Payment relation (optional - if expense is from a recurring payment)
-  recurringPaymentId String?
-  recurringPayment   ReccuringPayments? @relation(fields: [recurringPaymentId], references: [id])
-  
   // Indexes for better query performance
   @@index([userId])
-  @@index([date])
   @@index([category])
-  @@index([splitManagementId])
-  @@index([recurringPaymentId])
 }
