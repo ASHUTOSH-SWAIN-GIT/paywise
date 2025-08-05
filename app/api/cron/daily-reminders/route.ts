@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendDailyRecurringPaymentReminders } from '@/lib/actions/email-actions';
+import { sendAllDailyReminders } from '@/lib/actions/email-actions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,24 +16,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('Starting daily recurring payment reminders cron job');
+    console.log('Starting daily reminders for both recurring and split payments');
     
-    const result = await sendDailyRecurringPaymentReminders();
+    const result = await sendAllDailyReminders();
     
     if (!result.success) {
       console.error('Daily reminders failed:', result.error);
       return NextResponse.json(
-        { error: result.error, sentCount: result.sentCount || 0 },
+        { 
+          error: result.error, 
+          recurringCount: result.recurringCount || 0,
+          splitCount: result.splitCount || 0,
+          totalCount: result.totalCount || 0
+        },
         { status: 500 }
       );
     }
 
-    console.log(`Daily reminders completed successfully. Sent ${result.sentCount} emails.`);
+    console.log(`Daily reminders completed successfully. Sent ${result.totalCount} emails total (${result.recurringCount} recurring + ${result.splitCount} split).`);
     
     return NextResponse.json({
       success: true,
-      message: `Successfully sent ${result.sentCount} reminder emails`,
-      sentCount: result.sentCount
+      message: `Successfully sent ${result.totalCount} reminder emails (${result.recurringCount} recurring + ${result.splitCount} split)`,
+      recurringCount: result.recurringCount,
+      splitCount: result.splitCount,
+      totalCount: result.totalCount
     });
 
   } catch (error) {

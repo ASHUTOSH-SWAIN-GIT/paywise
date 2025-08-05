@@ -237,3 +237,138 @@ export async function sendDailyRecurringPaymentReminders(): Promise<{ success: b
     return { success: false, error: 'Failed to send daily reminders' };
   }
 }
+
+export async function sendDailySplitPaymentReminders(): Promise<{ success: boolean; error?: string; sentCount?: number }> {
+  try {
+    // Get today's date range
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1); // End of today
+
+    // Get all split payments with notification dates due today
+    const splitsDueToday = await prisma.splitManagement.findMany({
+      where: {
+        Notification: {
+          gte: today,
+          lt: tomorrow
+        }
+      },
+      include: {
+        assignee: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        splitParticipants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (splitsDueToday.length === 0) {
+      console.log('No split payment reminders due today');
+      return { success: true, sentCount: 0 };
+    }
+
+    let totalEmailsSent = 0;
+    const allEmailPromises: Promise<any>[] = [];
+
+    // Process each split payment
+    for (const split of splitsDueToday) {
+      // Send reminder emails to all participants
+      const participantEmails = split.splitParticipants.map(async (participant) => {
+        return EmailService.sendSplitNotification({
+          participantEmail: participant.user.email,
+          participantName: participant.user.name || 'User',
+          creatorName: split.assignee.name || 'User',
+          splitDescription: split.description,
+          totalAmount: split.totalAmount,
+          userAmount: participant.amountOwed,
+          dueDate: split.Notification.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+        });
+      });
+
+      allEmailPromises.push(...participantEmails);
+      totalEmailsSent += participantEmails.length;
+    }
+
+    const results = await Promise.all(allEmailPromises);
+    
+    // Check if any emails failed
+    const failures = results.filter(result => !result.success);
+    if (failures.length > 0) {
+      console.error('Some split reminder emails failed to send:', failures);
+      return { 
+        success: false, 
+        error: `${failures.length} split reminder emails failed to send`,
+        sentCount: results.length - failures.length
+      };
+    }
+
+    console.log(`Successfully sent ${results.length} split payment reminder emails`);
+    return { success: true, sentCount: results.length };
+
+  } catch (error) {
+    console.error('Error sending daily split payment reminders:', error);
+    return { success: false, error: 'Failed to send split reminders' };
+  }
+}
+
+export async function sendAllDailyReminders(): Promise<{ success: boolean; error?: string; recurringCount?: number; splitCount?: number; totalCount?: number }> {
+  try {
+    console.log('Starting all daily reminders...');
+
+    // Send both recurring and split payment reminders
+    const [recurringResult, splitResult] = await Promise.all([
+      sendDailyRecurringPaymentReminders(),
+      sendDailySplitPaymentReminders()
+    ]);
+
+    const recurringCount = recurringResult.sentCount || 0;
+    const splitCount = splitResult.sentCount || 0;
+    const totalCount = recurringCount + splitCount;
+
+    // Check if either failed
+    if (!recurringResult.success || !splitResult.success) {
+      const errors = [];
+      if (!recurringResult.success) errors.push(`Recurring: ${recurringResult.error}`);
+      if (!splitResult.success) errors.push(`Split: ${splitResult.error}`);
+      
+      return {
+        success: false,
+        error: errors.join('; '),
+        recurringCount,
+        splitCount,
+        totalCount
+      };
+    }
+
+    console.log(`Daily reminders completed: ${recurringCount} recurring + ${splitCount} split = ${totalCount} total emails sent`);
+    
+    return {
+      success: true,
+      recurringCount,
+      splitCount,
+      totalCount
+    };
+
+  } catch (error) {
+    console.error('Error sending all daily reminders:', error);
+    return { success: false, error: 'Failed to send daily reminders' };
+  }
+}

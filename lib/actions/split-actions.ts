@@ -115,40 +115,10 @@ export async function createSplitAction(data: CreateSplitData): Promise<{ succes
       })
     );
 
-    // Create TrackExpense records for each person in the split
-    const expenses = await Promise.all([
-      // Create expense for the current user (who paid)
-      prisma.trackExpense.create({
-        data: {
-          amount: data.amount,
-          description: `${data.description} (You paid, split ${totalPeople} ways)`,
-          category: 'Split',
-          userId: authUser.id,
-          splitManagementId: splitManagement.id,
-          tags: ['split', 'paid'],
-          date: new Date(),
-        }
-      }),
-      // Create expenses for each selected user (who owe money)
-      ...data.selectedUserIds.map(async (userId) => {
-        return prisma.trackExpense.create({
-          data: {
-            amount: -amountPerPerson, // Negative amount indicates they owe money
-            description: `Your share of "${data.description}" ($${amountPerPerson.toFixed(2)} of $${data.amount})`,
-            category: 'Split',
-            userId: userId,
-            splitManagementId: splitManagement.id,
-            tags: ['split', 'owe'],
-            date: new Date(),
-          }
-        });
-      })
-    ]);
-
     console.log('Split created successfully:', {
       totalAmount: data.amount,
       amountPerPerson,
-      expensesCreated: expenses.length,
+      participantsCreated: splitParticipants.length,
       splitId: splitManagement.id
     });
 
@@ -296,15 +266,6 @@ export async function getUserSplitsAction(): Promise<{ success: boolean; splits?
                 email: true
               }
             }
-          }
-        },
-        trackExpenses: {
-          select: {
-            id: true,
-            amount: true,
-            description: true,
-            date: true,
-            tags: true
           }
         }
       },

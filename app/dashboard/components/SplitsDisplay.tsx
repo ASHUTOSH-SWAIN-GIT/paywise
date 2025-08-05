@@ -48,13 +48,6 @@ interface Split {
       email: string;
     };
   }[];
-  trackExpenses: {
-    id: string;
-    amount: number;
-    description:string;
-    date: string;
-    tags: string[];
-  }[];
 }
 
 export function SplitsDisplay() {

@@ -43,8 +43,8 @@ export default function AdminPage() {
           <CardHeader>
             <CardTitle>Daily Reminder Management</CardTitle>
             <CardDescription>
-              Manually trigger daily recurring payment reminders for testing purposes.
-              This will send reminder emails to users who have payments due tomorrow.
+              Manually trigger daily reminders for both recurring payments and split payments.
+              This will send reminder emails to users who have payments due today or tomorrow.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -53,7 +53,7 @@ export default function AdminPage() {
               disabled={isLoading}
               className="w-full"
             >
-              {isLoading ? 'Sending Reminders...' : 'Send Daily Reminders'}
+              {isLoading ? 'Sending All Reminders...' : 'Send All Daily Reminders'}
             </Button>
             
             {result && (
