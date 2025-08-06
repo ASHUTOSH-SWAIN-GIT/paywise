@@ -187,7 +187,7 @@ export async function sendDailyRecurringPaymentReminders(): Promise<{ success: b
     });
 
     // Filter payments that are due tomorrow
-    const paymentsDueTomorrow = recurringPayments.filter(payment => {
+    const paymentsDueTomorrow = recurringPayments.filter((payment: any) => {
       const nextDueDate = calculateNextDueDate(payment.startDate, payment.frequency);
       
       // Check if the calculated due date falls on tomorrow
