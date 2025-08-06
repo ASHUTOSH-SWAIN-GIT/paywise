@@ -345,7 +345,7 @@ export async function sendAllDailyReminders(): Promise<{ success: boolean; error
 
     // Check if either failed
     if (!recurringResult.success || !splitResult.success) {
-      const errors = [];
+      const errors: string[] = [];
       if (!recurringResult.success) errors.push(`Recurring: ${recurringResult.error}`);
       if (!splitResult.success) errors.push(`Split: ${splitResult.error}`);
       
