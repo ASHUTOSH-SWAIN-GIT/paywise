@@ -5,7 +5,7 @@ import { ActionButton } from "../components/ui/ActionButton";
 import { AddExpenseDialog } from "../components/AddExpenseDialog";
 import { ExpenseDisplay } from "../components/ExpenseDisplay";
 
-export const TrackExpense = () => {
+export default function TrackExpense() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleExpenseAdded = () => {
@@ -30,4 +30,4 @@ export const TrackExpense = () => {
       <ExpenseDisplay refreshTrigger={refreshTrigger} />
     </div>
   );
-};
+}

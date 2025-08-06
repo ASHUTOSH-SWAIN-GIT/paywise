@@ -34,6 +34,7 @@ function calculateNextDueDate(startDate: Date, frequency: string): Date {
 interface CreateRecurringBillData {
   description: string;
   amount: number;
+  currency: string;
   category: string;
   startDate: string;
   frequency: string;
@@ -64,6 +65,7 @@ export async function createRecurringBillAction(data: CreateRecurringBillData) {
       data: {
         description: data.description.trim(),
         amount: parseFloat(data.amount.toString()),
+        currency: data.currency,
         category: data.category,
         startDate: new Date(data.startDate),
         frequency: data.frequency,

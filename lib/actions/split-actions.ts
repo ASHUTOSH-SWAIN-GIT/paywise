@@ -7,6 +7,7 @@ import { sendSplitNotificationEmails } from './email-actions';
 
 interface CreateSplitData {
   amount: number;
+  currency: string;
   description: string;
   selectedUserIds: string[];
   notificationInterval: string;
@@ -97,6 +98,7 @@ export async function createSplitAction(data: CreateSplitData): Promise<{ succes
         Notification: getNotificationDate(data.notificationInterval),
         assigneeId: authUser.id, // The person who created the split and paid the money
         totalAmount: data.amount, // Store the total amount
+        currency: data.currency, // Store the currency
       }
     });
 

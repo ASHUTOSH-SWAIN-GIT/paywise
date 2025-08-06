@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createExpenseAction } from '@/lib/actions/expense-actions';
+import { CurrencyAmountInput } from '@/components/ui/CurrencyAmountInput';
 
 interface AddExpenseDialogProps {
   children: React.ReactNode;
@@ -38,6 +39,7 @@ export function AddExpenseDialog({ children, onExpenseAdded }: AddExpenseDialogP
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
+    currency: 'INR', // Default to Indian Rupee
     category: '',
     receiptUrl: ''
   });
@@ -78,6 +80,7 @@ export function AddExpenseDialog({ children, onExpenseAdded }: AddExpenseDialogP
       const result = await createExpenseAction({
         description: formData.description,
         amount: Number(formData.amount),
+        currency: formData.currency,
         category: formData.category,
         receiptUrl: formData.receiptUrl || undefined,
       });
@@ -87,6 +90,7 @@ export function AddExpenseDialog({ children, onExpenseAdded }: AddExpenseDialogP
         setFormData({
           description: '',
           amount: '',
+          currency: 'INR',
           category: '',
           receiptUrl: ''
         });
@@ -143,25 +147,19 @@ export function AddExpenseDialog({ children, onExpenseAdded }: AddExpenseDialogP
             )}
           </div>
 
-          {/* Amount Field */}
-          <div className="space-y-2">
-            <Label htmlFor="amount" className="text-white">
-              Amount (₹) *
-            </Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={formData.amount}
-              onChange={(e) => handleInputChange('amount', e.target.value)}
-              className="bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500"
-            />
-            {errors.amount && (
-              <p className="text-red-400 text-sm">{errors.amount}</p>
-            )}
-          </div>
+          {/* Amount Field with Currency */}
+          <CurrencyAmountInput
+            id="amount"
+            label="Amount"
+            amount={formData.amount}
+            currency={formData.currency}
+            onAmountChange={(value) => handleInputChange('amount', value)}
+            onCurrencyChange={(value) => handleInputChange('currency', value)}
+            placeholder="0.00"
+            required={true}
+            error={errors.amount}
+            className="bg-neutral-900"
+          />
 
           {/* Category Field */}
           <div className="space-y-2">

@@ -1,9 +1,11 @@
+"use client";
+
 import { useState } from "react";
 import { ActionButton } from "../components/ui/ActionButton";
 import { AddSplitDialog } from "../components/AddSplitDialog";
 import { SplitsDisplay } from "../components/SplitsDisplay";
 
-export const SplitManagement = () => {
+export default function SplitManagement() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleSplitCreated = () => {
@@ -27,4 +29,4 @@ export const SplitManagement = () => {
       <SplitsDisplay refreshTrigger={refreshTrigger} />
     </div>
   );
-};
+}

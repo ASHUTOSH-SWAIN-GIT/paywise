@@ -5,7 +5,7 @@ import { ActionButton } from "../components/ui/ActionButton";
 import { AddRecurringBillDialog } from "../components/AddRecurringBillDialog";
 import { RecurringBillsDisplay } from "../components/RecurringBillsDisplay";
 
-export const RecurringPayments = () => {
+export default function RecurringPayments() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleBillAdded = () => {
@@ -28,4 +28,4 @@ export const RecurringPayments = () => {
       <RecurringBillsDisplay refreshTrigger={refreshTrigger} />
     </div>
   );
-};
+}

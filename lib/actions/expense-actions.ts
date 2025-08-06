@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 interface CreateExpenseData {
   description: string;
   amount: number;
+  currency: string;
   category: string;
   receiptUrl?: string;
   tags?: string[];
@@ -51,6 +52,7 @@ export async function createExpenseAction(data: CreateExpenseData): Promise<{ su
       data: {
         description: data.description.trim(),
         amount: parseFloat(data.amount.toString()),
+        currency: data.currency,
         category: data.category,
         receiptUrl: data.receiptUrl?.trim() || null,
         tags: data.tags || [],

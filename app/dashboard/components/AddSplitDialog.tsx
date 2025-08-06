@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { useUsers } from '@/lib/hooks/useUsers';
 import { createSplitAction } from '@/lib/actions/split-actions';
+import { CurrencyAmountInput, formatCurrency } from '@/components/ui/CurrencyAmountInput';
 
 interface AddSplitDialogProps {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ interface AddSplitDialogProps {
 
 interface FormData {
   amount: string;
+  currency: string;
   selectedUsers: string[];
   notificationInterval: string;
   description: string;
@@ -33,6 +35,7 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     amount: '',
+    currency: 'INR', // Default to Indian Rupee
     selectedUsers: [],
     notificationInterval: 'weekly',
     description: '',
@@ -120,6 +123,7 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
     try {
       const result = await createSplitAction({
         amount: parseFloat(formData.amount),
+        currency: formData.currency,
         description: formData.description || 'Expense split',
         selectedUserIds: formData.selectedUsers,
         notificationInterval: formData.notificationInterval,
@@ -132,6 +136,7 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
         // Reset form state after successful submission
         setFormData({
           amount: '',
+          currency: 'INR',
           selectedUsers: [],
           notificationInterval: 'weekly',
           description: '',
@@ -177,30 +182,22 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Amount Field */}
-          <div className="space-y-2">
-            <label htmlFor="amount" className="text-sm font-bold text-gray-300">
-              Amount
-            </label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-4 w-4" />
-              <input
-                id="amount"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={formData.amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                className="w-full pl-10 pr-3 py-2 bg-black border-2 border-gray-700 rounded-lg placeholder-gray-500  focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-                required
-              />
+          {/* Amount Field with Currency */}
+          <CurrencyAmountInput
+            id="amount"
+            label="Amount"
+            amount={formData.amount}
+            currency={formData.currency}
+            onAmountChange={(value) => setFormData(prev => ({ ...prev, amount: value }))}
+            onCurrencyChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
+            placeholder="0.00"
+            required={true}
+          />
+          {formData.amount && formData.selectedUsers.length > 0 && (
+            <div className="text-xs text-gray-400 bg-gray-900/50 p-2 rounded-md">
+              <p>Splitting between {totalPeople} people: <span className="text-white font-semibold">{formatCurrency(amountPerPerson, formData.currency)} each</span></p>
             </div>
-            {formData.amount && formData.selectedUsers.length > 0 && (
-              <div className="text-xs text-gray-400 bg-gray-900/50 p-2 rounded-md">
-                <p>Splitting between {totalPeople} people: <span className="text-white font-semibold">${amountPerPerson.toFixed(2)} each</span></p>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Description Field */}
           <div className="space-y-2">

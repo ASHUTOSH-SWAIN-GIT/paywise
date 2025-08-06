@@ -38,6 +38,7 @@ model SplitManagement {
   Notification DateTime
   assigneeId   String  // The user who created the split and paid the money
   totalAmount  Float   // Total amount of the split
+  currency     String  @default("USD") // Currency code (USD, INR, EUR, etc.)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
@@ -64,6 +65,7 @@ model ReccuringPayments {
   id String @id @default(cuid())
   description String 
   amount Float // Monthly/recurring amount
+  currency String @default("USD") // Currency code (USD, INR, EUR, etc.)
   category String // Category from dropdown (Utilities, Rent, etc.)
   startDate DateTime // When the recurring payment starts
   frequency String // weekly, biweekly, monthly, quarterly, yearly
@@ -79,6 +81,7 @@ model ReccuringPayments {
 model TrackExpense {
   id          String   @id @default(cuid())
   amount      Float
+  currency    String   @default("USD") // Currency code (USD, INR, EUR, etc.)
   description String
   category    String   // e.g., "Food", "Transportation", "Entertainment", "Bills", etc.
   createdAt   DateTime @default(now())

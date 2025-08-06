@@ -23,6 +23,7 @@ import { DollarSign, LinkIcon } from "lucide-react"
 import { toast } from "sonner"
 import { useUser } from "@/lib/context/user-context"
 import { createRecurringBillAction } from "@/lib/actions/recurring-bills-actions"
+import { CurrencyAmountInput } from "@/components/ui/CurrencyAmountInput"
 
 interface AddRecurringBillDialogProps {
   children: React.ReactNode
@@ -32,6 +33,7 @@ interface AddRecurringBillDialogProps {
 interface RecurringBillForm {
   description: string
   amount: string
+  currency: string
   category: string
   startDate: string
   frequency: string
@@ -66,6 +68,7 @@ export function AddRecurringBillDialog({ children, onBillAdded }: AddRecurringBi
   const [formData, setFormData] = useState<RecurringBillForm>({
     description: "",
     amount: "",
+    currency: "INR", // Default to Indian Rupee
     category: "",
     startDate: "",
     frequency: "",
@@ -85,6 +88,7 @@ export function AddRecurringBillDialog({ children, onBillAdded }: AddRecurringBi
     setFormData({
       description: "",
       amount: "",
+      currency: "INR",
       category: "",
       startDate: "",
       frequency: "",
@@ -146,6 +150,7 @@ export function AddRecurringBillDialog({ children, onBillAdded }: AddRecurringBi
       const result = await createRecurringBillAction({
         description: formData.description,
         amount: parseFloat(formData.amount),
+        currency: formData.currency,
         category: formData.category,
         startDate: formData.startDate,
         frequency: formData.frequency,
@@ -204,30 +209,19 @@ export function AddRecurringBillDialog({ children, onBillAdded }: AddRecurringBi
             />
           </div>
 
-          {/* Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="amount" className="text-slate-200">
-              Amount *
-            </Label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={formData.amount}
-                onChange={(e) => handleInputChange("amount", e.target.value)}
-                onBlur={(e) => {
-                  const formatted = formatCurrency(e.target.value)
-                  if (formatted) handleInputChange("amount", formatted)
-                }}
-                className="bg-black border-slate-800 text-white placeholder:text-slate-500 focus:border-white pl-10"
-                disabled={isLoading}
-              />
-            </div>
-          </div>
+          {/* Amount with Currency */}
+          <CurrencyAmountInput
+            id="amount"
+            label="Amount"
+            amount={formData.amount}
+            currency={formData.currency}
+            onAmountChange={(value) => handleInputChange("amount", value)}
+            onCurrencyChange={(value) => handleInputChange("currency", value)}
+            placeholder="0.00"
+            required={true}
+            disabled={isLoading}
+            className="bg-neutral-900"
+          />
 
           {/* Category */}
           <div className="space-y-2">
