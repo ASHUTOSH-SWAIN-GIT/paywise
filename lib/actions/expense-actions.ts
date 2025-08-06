@@ -180,7 +180,7 @@ export async function getExpenseStatsAction(userId: string) {
       }
     });
 
-    const totalThisMonth = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalThisMonth = monthlyExpenses.reduce((sum: number, expense: any) => sum + expense.amount, 0);
 
     // Get category breakdown
     const categoryStats = await prisma.trackExpense.groupBy({
