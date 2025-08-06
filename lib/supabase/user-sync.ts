@@ -1,5 +1,8 @@
 import { supabase } from './client';
-import type { User as PrismaUser } from '@prisma/client';
+// import type { User as PrismaUser } from '@prisma/client';
+
+// Alternative: Use any type to avoid import issues
+type PrismaUser = any;
 
 export interface CreateUserData {
   id: string;

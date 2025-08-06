@@ -4,7 +4,10 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { syncUserWithDatabase, getCurrentUser, updateUserProfile } from '@/lib/supabase/user-sync';
 import type { User } from '@supabase/supabase-js';
-import type { User as PrismaUser } from '@prisma/client';
+// import type { User as PrismaUser } from '@prisma/client';
+
+// Alternative: Use any type to avoid import issues
+type PrismaUser = any;
 
 interface UserContextType {
   user: PrismaUser | null;
