@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useUsers } from '@/lib/hooks/useUsers';
+import { useUserSearch } from '@/lib/hooks/useUserSearch';
 import { createSplitAction } from '@/lib/actions/split-actions';
 import { CurrencyAmountInput, formatCurrency } from '@/components/ui/CurrencyAmountInput';
 
@@ -44,15 +44,13 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { users, loading: usersLoading } = useUsers();
+  const { users, loading: usersLoading, searchUsers, clearUsers } = useUserSearch();
 
-  const filteredUsers = users.filter(user =>
-    user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const totalPeople = formData.selectedUsers.length + 1; // +1 for the current user
-  const amountPerPerson = formData.amount ? parseFloat(formData.amount) / totalPeople : 0;
+  // Handle search input changes
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    searchUsers(value);
+  };
 
   // Calculate total of custom amounts
   const getTotalCustomAmount = () => {
@@ -144,6 +142,7 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
           customAmounts: {},
         });
         setSearchQuery('');
+        clearUsers();
         
         toast.success('Split created successfully!', {
           description: `Created split of $${formData.amount} with ${formData.selectedUsers.length} other people.`
@@ -193,11 +192,6 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
             placeholder="0.00"
             required={true}
           />
-          {formData.amount && formData.selectedUsers.length > 0 && (
-            <div className="text-xs text-gray-400 bg-gray-900/50 p-2 rounded-md">
-              <p>Splitting between {totalPeople} people: <span className="text-white font-semibold">{formatCurrency(amountPerPerson, formData.currency)} each</span></p>
-            </div>
-          )}
 
           {/* Description Field */}
           <div className="space-y-2">
@@ -252,7 +246,7 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
                 type="text"
                 placeholder="Search by name or email..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-3 py-2 bg-black border-2 border-gray-700 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
               />
             </div>
@@ -264,8 +258,8 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   <span>Loading users...</span>
                 </div>
-              ) : filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => {
+              ) : users.length > 0 ? (
+                users.map((user) => {
                   const isSelected = formData.selectedUsers.includes(user.id);
                   const customAmount = formData.customAmounts[user.id] || '';
                   return (
@@ -301,7 +295,10 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
                         {/* Equal Split Amount Display */}
                         {isSelected && formData.splitType === 'equal' && formData.amount && (
                           <div className="text-xs text-gray-400">
-                            ${amountPerPerson.toFixed(2)}
+                            {formatCurrency(
+                              parseFloat(formData.amount) / (formData.selectedUsers.length + 1), 
+                              formData.currency
+                            )}
                           </div>
                         )}
                       </div>
@@ -310,7 +307,11 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
                 })
               ) : (
                 <div className="text-center py-6 px-4 text-sm text-gray-400">
-                  <p>{searchQuery ? `No users found for "${searchQuery}"` : 'No other users available.'}</p>
+                  <p>
+                    {searchQuery.trim() 
+                      ? `No users found for "${searchQuery}"` 
+                      : 'Type a name or email to search for users to split with'}
+                  </p>
                 </div>
               )}
             </div>

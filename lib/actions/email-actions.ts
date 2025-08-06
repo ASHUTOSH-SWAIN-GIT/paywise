@@ -9,6 +9,7 @@ export async function sendSplitNotificationEmails(
   splitData: {
     description: string;
     totalAmount: number;
+    currency?: string;
     creatorName: string;
     customAmounts?: { [userId: string]: number };
   }
@@ -49,6 +50,7 @@ export async function sendSplitNotificationEmails(
         splitDescription: splitData.description,
         totalAmount: splitData.totalAmount,
         userAmount: userAmount,
+        currency: splitData.currency || 'USD',
         dueDate: new Date(split.Notification).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
@@ -102,6 +104,8 @@ export async function sendRecurringPaymentReminder(
       userName: recurringPayment.user.name || 'User',
       description: recurringPayment.description,
       provider: recurringPayment.paymentLink ?? '',
+      amount: recurringPayment.amount,
+      currency: recurringPayment.currency || 'USD',
       dueDate: new Date(recurringPayment.frequency).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
@@ -208,6 +212,8 @@ export async function sendDailyRecurringPaymentReminders(): Promise<{ success: b
         userName: payment.user.name || 'User',
         description: payment.description,
         provider: payment.paymentLink ?? '',
+        amount: payment.amount,
+        currency: payment.currency || 'USD',
         dueDate: nextDueDate.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',

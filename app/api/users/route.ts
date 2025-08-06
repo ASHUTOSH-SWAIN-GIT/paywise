@@ -25,10 +25,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Get all users except the current user (for splitting purposes)
+    // Get search query from URL parameters
+    const { searchParams } = new URL(request.url);
+    const searchQuery = searchParams.get('search');
+
+    // If no search query, return empty array (don't show all users by default)
+    if (!searchQuery || searchQuery.trim().length === 0) {
+      return NextResponse.json({ success: true, users: [] });
+    }
+
+    // Get users that match the search query (excluding current user)
     const users = await prisma.user.findMany({
       where: {
-        id: { not: authUser.id }
+        AND: [
+          { id: { not: authUser.id } },
+          {
+            OR: [
+              { name: { contains: searchQuery, mode: 'insensitive' } },
+              { email: { contains: searchQuery, mode: 'insensitive' } }
+            ]
+          }
+        ]
       },
       select: {
         id: true,

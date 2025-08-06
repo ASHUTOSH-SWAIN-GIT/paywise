@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { getUserRecurringBillsAction, deleteRecurringBillAction } from '@/lib/actions/recurring-bills-actions';
 import { useUser } from '@/lib/context/user-context';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/components/ui/CurrencyAmountInput';
 import {
   Card,
   CardContent,
@@ -29,6 +30,7 @@ interface RecurringBill {
   id: string;
   description: string;
   amount: number;
+  currency: string;
   category: string;
   startDate: Date;
   frequency: string;
@@ -87,13 +89,6 @@ export function RecurringBillsDisplay({ refreshTrigger }: RecurringBillsDisplayP
       day: 'numeric',
       year: 'numeric'
     });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
   };
 
   const formatFrequency = (frequency: string) => {
@@ -269,7 +264,7 @@ export function RecurringBillsDisplay({ refreshTrigger }: RecurringBillsDisplayP
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-green-400" />
                   <span className="text-green-400 font-semibold text-lg">
-                    {formatCurrency(bill.amount)}
+                    {formatCurrency(bill.amount, bill.currency)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-slate-300 text-sm bg-slate-800 px-2 py-1 rounded">

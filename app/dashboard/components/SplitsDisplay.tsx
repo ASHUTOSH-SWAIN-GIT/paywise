@@ -5,6 +5,7 @@ import { getUserSplitsAction, closeSplitAction } from '@/lib/actions/split-actio
 import { getCreatorQRCodeAction } from '@/lib/actions/qr-actions';
 import { useUser } from '@/lib/context/user-context';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/components/ui/CurrencyAmountInput';
 import {
   Card,
   CardContent,
@@ -34,6 +35,7 @@ interface Split {
   id: string;
   description: string;
   totalAmount: number;
+  currency: string;
   Notification: string;
   createdAt: string;
   assignee: {
@@ -93,13 +95,6 @@ export function SplitsDisplay({ refreshTrigger }: SplitsDisplayProps) {
       day: 'numeric',
       year: 'numeric'
     });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
   };
 
   const getAmountPending = (split: Split) => {
@@ -237,7 +232,7 @@ export function SplitsDisplay({ refreshTrigger }: SplitsDisplayProps) {
                   <ReceiptText className="h-4 w-4" />
                   <span className="text-sm font-medium">Total Bill</span>
                 </div>
-                <span className="font-semibold text-slate-100 text-base">{formatCurrency(split.totalAmount)}</span>
+                <span className="font-semibold text-slate-100 text-base">{formatCurrency(split.totalAmount, split.currency)}</span>
               </div>
               
               {/* User-specific section */}
@@ -248,7 +243,7 @@ export function SplitsDisplay({ refreshTrigger }: SplitsDisplayProps) {
                       <Landmark className="h-4 w-4" />
                       <span className="text-sm font-medium">Amount Pending</span>
                     </div>
-                    <span className="font-semibold text-sky-400">{formatCurrency(getAmountPending(split))}</span>
+                    <span className="font-semibold text-sky-400">{formatCurrency(getAmountPending(split), split.currency)}</span>
                   </div>
                 ) : (
                   <>
@@ -257,7 +252,7 @@ export function SplitsDisplay({ refreshTrigger }: SplitsDisplayProps) {
                         <CircleDollarSign className="h-4 w-4" />
                         <span className="text-sm font-medium">Your Share</span>
                       </div>
-                      <span className="font-semibold text-slate-50">{formatCurrency(getUserAmountOwed(split))}</span>
+                      <span className="font-semibold text-slate-50">{formatCurrency(getUserAmountOwed(split), split.currency)}</span>
                     </div>
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-2 text-slate-300">
