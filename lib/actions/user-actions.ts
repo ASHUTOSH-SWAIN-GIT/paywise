@@ -22,7 +22,7 @@ function createServerSupabaseClient() {
     }
   );
 }
-
+// fix
 export async function syncUserAction(userId: string): Promise<{ success: boolean; user?: PrismaUser; error?: string }> {
   try {
     const supabase = createServerSupabaseClient();
