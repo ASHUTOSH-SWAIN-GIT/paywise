@@ -17,6 +17,7 @@ import { createSplitAction } from '@/lib/actions/split-actions';
 
 interface AddSplitDialogProps {
   children: React.ReactNode;
+  onSplitCreated?: () => void;
 }
 
 interface FormData {
@@ -28,7 +29,7 @@ interface FormData {
   customAmounts: { [userId: string]: string };
 }
 
-export function AddSplitDialog({ children }: AddSplitDialogProps) {
+export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     amount: '',
@@ -142,6 +143,11 @@ export function AddSplitDialog({ children }: AddSplitDialogProps) {
         toast.success('Split created successfully!', {
           description: `Created split of $${formData.amount} with ${formData.selectedUsers.length} other people.`
         });
+
+        // Trigger refresh of splits list
+        if (onSplitCreated) {
+          onSplitCreated();
+        }
       } else {
         toast.error('Failed to create split', {
           description: result.error || 'Please try again.'

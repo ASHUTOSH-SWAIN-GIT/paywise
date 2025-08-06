@@ -51,7 +51,7 @@ export default function AdminPage() {
             <Button 
               onClick={triggerDailyReminders}
               disabled={isLoading}
-              className="w-full"
+              className="w-full bg-white"
             >
               {isLoading ? 'Sending All Reminders...' : 'Send All Daily Reminders'}
             </Button>

@@ -37,9 +37,56 @@ export async function getCreatorQRCodeAction(creatorId: string): Promise<{ succe
     }
 
     if (!creator.QrCode) {
-      return { success: false, error: 'QR code not uploaded by creator' };
+      return { success: false, error: 'Creator has not uploaded a QR code yet. Please ask them to upload their payment QR code first.' };
     }
 
+    // If it's a Supabase storage URL, create a signed URL to bypass policy issues
+    if (creator.QrCode.includes('supabase.co/storage/v1/object/')) {
+      try {
+        // Extract file path from the stored URL
+        let filePath: string;
+        
+        if (creator.QrCode.includes('/storage/v1/object/public/paywise/')) {
+          filePath = creator.QrCode.split('/storage/v1/object/public/paywise/')[1];
+        } else if (creator.QrCode.includes('/storage/v1/object/paywise/')) {
+          filePath = creator.QrCode.split('/storage/v1/object/paywise/')[1];
+        } else {
+          // Try to extract from any Supabase storage URL pattern
+          const urlParts = creator.QrCode.split('/');
+          const paywiseIndex = urlParts.findIndex(part => part === 'paywise');
+          if (paywiseIndex !== -1 && paywiseIndex < urlParts.length - 1) {
+            filePath = urlParts.slice(paywiseIndex + 1).join('/');
+          } else {
+            // Fallback to original URL if we can't parse it
+            return { success: true, qrCodeUrl: creator.QrCode };
+          }
+        }
+
+        console.log('Creating signed URL for file path:', filePath);
+
+        // Create a signed URL that will work regardless of bucket policies
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from('paywise')
+          .createSignedUrl(filePath, 3600); // Valid for 1 hour
+
+        if (signedUrlError) {
+          console.error('Signed URL creation error:', signedUrlError);
+          // Fallback to original URL
+          return { success: true, qrCodeUrl: creator.QrCode };
+        }
+
+        console.log('Generated signed URL successfully');
+        return { success: true, qrCodeUrl: signedUrlData.signedUrl };
+
+      } catch (urlError) {
+        console.error('Error processing Supabase URL:', urlError);
+        // Fallback to original URL
+        return { success: true, qrCodeUrl: creator.QrCode };
+      }
+    }
+
+    // For non-Supabase URLs, return as-is
+    console.log('Using original QR code URL:', creator.QrCode);
     return { success: true, qrCodeUrl: creator.QrCode };
 
   } catch (error) {

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { getUserSplitsAction, closeSplitAction } from '@/lib/actions/split-actions';
+import { getCreatorQRCodeAction } from '@/lib/actions/qr-actions';
 import { useUser } from '@/lib/context/user-context';
 import { toast } from 'sonner';
 import {
@@ -24,7 +25,9 @@ import {
   AlertTriangle,
   ReceiptText,
   Hourglass,
-  BadgeInfo
+  BadgeInfo,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 interface Split {
@@ -50,7 +53,11 @@ interface Split {
   }[];
 }
 
-export function SplitsDisplay() {
+interface SplitsDisplayProps {
+  refreshTrigger?: number;
+}
+
+export function SplitsDisplay({ refreshTrigger }: SplitsDisplayProps) {
   const { user } = useUser();
   const [splits, setSplits] = useState<Split[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +85,7 @@ export function SplitsDisplay() {
       }
     };
     fetchSplits();
-  }, []);
+  }, [refreshTrigger]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -115,30 +122,32 @@ export function SplitsDisplay() {
     return participant ? participant.isPaid : false;
   };
 
-  const handleDownloadQR = async (split: Split) => {
-    toast.loading('Checking for QR code...');
+  const [showQR, setShowQR] = useState<{ [key: string]: boolean }>({});
+  const [qrUrls, setQrUrls] = useState<{ [key: string]: string }>({});
+
+  const handleShowQR = async (creatorId: string, splitId: string) => {
     try {
-      const { getCreatorQRCodeAction } = await import('@/lib/actions/qr-actions');
-      const result = await getCreatorQRCodeAction(split.assignee.id);
-      
-      toast.dismiss();
-      
-      if (result.success && result.qrCodeUrl) {
-        const link = document.createElement('a');
-        link.href = result.qrCodeUrl;
-        link.download = `qr-code-${split.description.replace(/\s+/g, '-')}.jpg`;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast.success('QR code download started!');
-      } else {
-        toast.error(result.error || 'Creator has not uploaded a QR code.');
+      // If we already have the QR URL, just toggle display
+      if (qrUrls[creatorId]) {
+        setShowQR(prev => ({ ...prev, [splitId]: !prev[splitId] }));
+        return;
       }
+
+      // Get the QR code URL
+      const result = await getCreatorQRCodeAction(creatorId);
+      
+      if (!result.success || !result.qrCodeUrl) {
+        toast.error(result.error || 'Failed to get QR code');
+        return;
+      }
+
+      // Store the QR URL and show it
+      setQrUrls(prev => ({ ...prev, [creatorId]: result.qrCodeUrl! }));
+      setShowQR(prev => ({ ...prev, [splitId]: true }));
+      
     } catch (error) {
-      toast.dismiss();
-      console.error('Error downloading QR code:', error);
-      toast.error('Failed to download QR code.');
+      console.error('Error getting QR code:', error);
+      toast.error('Failed to load QR code. Please try again.');
     }
   };
 
@@ -276,6 +285,27 @@ export function SplitsDisplay() {
                 </div>
                 <span className="font-medium text-slate-300 text-sm">{formatDate(split.Notification)}</span>
               </div>
+
+              {/* QR Code Display */}
+              {!creator && showQR[split.id] && qrUrls[split.assignee.id] && (
+                <div className="bg-slate-800/50 p-4 rounded-lg text-center">
+                  <h4 className="text-sm font-medium text-slate-300 mb-3">Payment QR Code</h4>
+                  <div className="flex justify-center">
+                    <img 
+                      src={qrUrls[split.assignee.id]} 
+                      alt="Payment QR Code" 
+                      className="w-48 h-48 object-contain bg-white rounded-lg p-2"
+                      onError={(e) => {
+                        console.error('Failed to load QR image');
+                        toast.error('Failed to load QR code image');
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-400 mt-2">
+                    Scan this QR code to pay {split.assignee.name || split.assignee.email}
+                  </p>
+                </div>
+              )}
             </CardContent>
 
             <CardFooter className="border-t border-slate-800 pt-3 pb-3 flex justify-between items-center mt-auto">
@@ -286,11 +316,11 @@ export function SplitsDisplay() {
               {!creator ? (
                 <Button
                   size="sm"
-                  onClick={() => handleDownloadQR(split)}
+                  onClick={() => handleShowQR(split.assignee.id, split.id)}
                   className="flex items-center gap-2 bg-slate-50 text-slate-900 hover:bg-slate-200"
                 >
-                  <Download className="h-4 w-4" />
-                  Pay with QR
+                  {showQR[split.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showQR[split.id] ? 'Hide QR' : 'Show QR'}
                 </Button>
               ) : (
                 <Button

@@ -4,14 +4,17 @@ import { useUser } from '@/lib/context/user-context';
 import { useState } from 'react';
 import { uploadQRCodeAction } from '@/lib/actions/upload-actions';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export const Header = () => {
   const { user, signOut } = useUser();
+  const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     setShowUserMenu(false);
+    router.push("/");
   };
 
   const handleQRUpload = async () => {
