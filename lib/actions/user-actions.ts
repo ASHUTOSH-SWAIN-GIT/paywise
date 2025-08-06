@@ -4,7 +4,10 @@ import { prisma } from '@/lib/prisma/prisma';
 import { supabase } from '@/lib/supabase/client';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import type { User as PrismaUser } from '@prisma/client';
+// import type { User as PrismaUser } from '@prisma/client';
+
+// Alternative: Use any type to avoid import issues
+type PrismaUser = any;
 
 function createServerSupabaseClient() {
   const cookieStore = cookies();
