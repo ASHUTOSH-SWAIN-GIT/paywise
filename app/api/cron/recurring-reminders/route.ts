@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Filter payments that are due for reminder
-    const dueRecurringPayments = allRecurringPayments.filter(payment => {
+    const dueRecurringPayments = allRecurringPayments.filter((payment: any) => {
       const startDate = new Date(payment.startDate);
       const daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     console.log(`Found ${dueRecurringPayments.length} recurring payments due within 24 hours`);
 
     // Send reminder emails
-    const emailPromises = dueRecurringPayments.map(payment => 
+    const emailPromises = dueRecurringPayments.map((payment: any) => 
       sendRecurringPaymentReminder(payment.id)
     );
 
