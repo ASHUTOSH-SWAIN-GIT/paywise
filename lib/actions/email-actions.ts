@@ -37,7 +37,7 @@ export async function sendSplitNotificationEmails(
     }
 
     // Send emails to all participants
-    const emailPromises = participants.map(async (participant) => {
+    const emailPromises = participants.map(async (participant: any) => {
       const userAmount = splitData.customAmounts 
         ? (splitData.customAmounts[participant.id] || 0)
         : splitData.totalAmount / (participantIds.length + 1); // +1 for creator
@@ -200,7 +200,7 @@ export async function sendDailyRecurringPaymentReminders(): Promise<{ success: b
     }
 
     // Send reminder emails
-    const emailPromises = paymentsDueTomorrow.map(async (payment) => {
+    const emailPromises = paymentsDueTomorrow.map(async (payment: any) => {
       const nextDueDate = calculateNextDueDate(payment.startDate, payment.frequency);
       
       return EmailService.sendRecurringPaymentReminder({
@@ -287,7 +287,7 @@ export async function sendDailySplitPaymentReminders(): Promise<{ success: boole
     // Process each split payment
     for (const split of splitsDueToday) {
       // Send reminder emails to all participants
-      const participantEmails = split.splitParticipants.map(async (participant) => {
+      const participantEmails = split.splitParticipants.map(async (participant: any) => {
         return EmailService.sendSplitNotification({
           participantEmail: participant.user.email,
           participantName: participant.user.name || 'User',
