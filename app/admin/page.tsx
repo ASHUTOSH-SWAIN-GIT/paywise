@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import AuthGuard from '@/components/auth/AuthGuard';
 
-export default function AdminPage() {
+function AdminPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
@@ -23,12 +24,12 @@ export default function AdminPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setResult(`✅ Success: ${data.message}`);
+        setResult(`Success: ${data.message}`);
       } else {
-        setResult(`❌ Error: ${data.error}`);
+        setResult(` Error: ${data.error}`);
       }
     } catch (error) {
-      setResult(`❌ Network Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setResult(` Network Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
@@ -95,5 +96,13 @@ export default function AdminPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <AuthGuard requireAuth={true} requireAdmin={true}>
+      <AdminPageContent />
+    </AuthGuard>
   );
 }

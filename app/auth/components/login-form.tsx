@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { supabase } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { syncUserWithDatabase } from '@/lib/supabase/user-sync';
 
 export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     // Listen for auth state changes and sync user data
@@ -19,29 +20,42 @@ export default function LoginForm() {
           try {
             // Sync user with our custom database
             await syncUserWithDatabase(session.user);
-            // Redirect to dashboard
-            router.push('/dashboard');
+            
+            // Check for redirect parameter
+            const redirectTo = searchParams.get('redirect');
+            const destination = redirectTo && redirectTo !== '/auth' ? redirectTo : '/dashboard';
+            
+            // Redirect to intended destination or dashboard
+            router.push(destination);
           } catch (error) {
             console.error('Error syncing user after sign in:', error);
             // Still redirect even if sync fails
-            router.push('/dashboard');
+            const redirectTo = searchParams.get('redirect');
+            const destination = redirectTo && redirectTo !== '/auth' ? redirectTo : '/dashboard';
+            router.push(destination);
           }
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, [router, searchParams]);
 
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Preserve redirect parameter in OAuth flow
+      const redirectTo = searchParams.get('redirect');
+      const redirectUrl = redirectTo 
+        ? `${window.location.origin}/auth?redirect=${encodeURIComponent(redirectTo)}`
+        : `${window.location.origin}/auth`;
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo: redirectUrl,
         },
       });
 

@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { Sidebar } from "./components/sidebar/Sidebar";
 import { Header } from "./components/Header";
 import { MainContent } from "./components/MainContent";
 
 export default function Dashboard() {
   const [activeSection, setActiveSection] = useState("split-management");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Check for error parameter and show appropriate message
+    const error = searchParams.get('error');
+    if (error === 'access_denied') {
+      toast.error('Access denied: You do not have permission to access the admin panel.');
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-black text-neutral-300 flex">
