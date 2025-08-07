@@ -3,6 +3,7 @@ import { sendAllDailyReminders } from '@/lib/actions/email-actions';
 
 export async function GET(request: NextRequest) {
   try {
+    // No authorization required - endpoint is open for external cron services
     console.log('Starting daily reminders for both recurring and split payments');
     
     const result = await sendAllDailyReminders();
