@@ -52,6 +52,10 @@ export default function LoginForm() {
         ? `${window.location.origin}/auth?redirect=${encodeURIComponent(redirectTo)}`
         : `${window.location.origin}/auth`;
 
+      console.log('OAuth redirect URL:', redirectUrl);
+      console.log('Window origin:', window.location.origin);
+      console.log('Environment APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

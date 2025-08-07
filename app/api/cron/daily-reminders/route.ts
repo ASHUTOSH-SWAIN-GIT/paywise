@@ -3,19 +3,6 @@ import { sendAllDailyReminders } from '@/lib/actions/email-actions';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify the request is from a cron job or authorized source
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    // Allow requests without auth for development or if no CRON_SECRET is set
-    const isDevMode = process.env.NODE_ENV === 'development';
-    const hasValidAuth = cronSecret && authHeader === `Bearer ${cronSecret}`;
-    const shouldAllowRequest = !cronSecret || hasValidAuth || isDevMode;
-    
-    if (cronSecret && !hasValidAuth && !isDevMode) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     console.log('Starting daily reminders for both recurring and split payments');
     
     const result = await sendAllDailyReminders();

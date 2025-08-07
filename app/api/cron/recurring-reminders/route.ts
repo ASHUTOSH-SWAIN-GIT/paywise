@@ -4,12 +4,6 @@ import { sendRecurringPaymentReminder } from '@/lib/actions/email-actions';
 
 export async function GET(request: NextRequest) {
   try {
-    // Check for authorization (you might want to add a secret token)
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get current date
     const now = new Date();
     const tomorrow = new Date(now);
