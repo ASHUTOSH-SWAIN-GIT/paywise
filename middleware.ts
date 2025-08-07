@@ -103,23 +103,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
-  // Handle cron job authentication
+  // Handle cron job authentication - DISABLED for external cron services
   if (isCronRoute) {
-    const cronSecret = request.headers.get('authorization')?.replace('Bearer ', '') || 
-                      request.nextUrl.searchParams.get('secret');
-    
-    // In development, allow cron jobs without secret
-    if (process.env.NODE_ENV === 'development') {
-      return response;
-    }
-    
-    // In production, require CRON_SECRET
-    if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Invalid cron secret' }, 
-        { status: 401 }
-      );
-    }
+    // Allow all cron requests without authentication for external cron services
     return response;
   }
 
