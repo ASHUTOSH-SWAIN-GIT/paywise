@@ -44,6 +44,7 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedUserDetails, setSelectedUserDetails] = useState<any[]>([]);
   const { users, loading: usersLoading, searchUsers, clearUsers } = useUserSearch();
 
   // Handle search input changes
@@ -85,6 +86,27 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
         customAmounts: newCustomAmounts
       };
     });
+
+    // Handle selected user details
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUserDetails(prev => {
+        const isSelected = formData.selectedUsers.includes(userId);
+        if (isSelected) {
+          // Remove user from selected details
+          return prev.filter(u => u.id !== userId);
+        } else {
+          // Add user to selected details
+          return [...prev, user];
+        }
+      });
+    }
+  };
+
+  // Get all users to display (selected users + search results, avoiding duplicates)
+  const getUsersToDisplay = () => {
+    const searchResults = users.filter(user => !formData.selectedUsers.includes(user.id));
+    return [...selectedUserDetails, ...searchResults];
   };
 
   const handleCustomAmountChange = (userId: string, amount: string) => {
@@ -142,6 +164,7 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
           customAmounts: {},
         });
         setSearchQuery('');
+        setSelectedUserDetails([]);
         clearUsers();
         
         toast.success('Split created successfully!', {
@@ -258,8 +281,8 @@ export function AddSplitDialog({ children, onSplitCreated }: AddSplitDialogProps
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   <span>Loading users...</span>
                 </div>
-              ) : users.length > 0 ? (
-                users.map((user) => {
+              ) : getUsersToDisplay().length > 0 ? (
+                getUsersToDisplay().map((user) => {
                   const isSelected = formData.selectedUsers.includes(user.id);
                   const customAmount = formData.customAmounts[user.id] || '';
                   return (
