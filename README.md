@@ -1,5 +1,5 @@
 # Paywise: Expense Management and Financial Tracking Platform
-![thumbnail](./public/assets/landingPage-8cd84a59-e746-4ebf-b462-08c303a30fa9)
+
 ## 🗂️ Description
 
 Paywise is a comprehensive expense management and financial tracking platform designed to help individuals and groups manage their finances efficiently. The platform allows users to track personal expenses, manage recurring bills and payments, and split expenses with friends or family. With a focus on user-friendly interfaces and robust functionality, Paywise aims to simplify financial management and provide valuable insights into spending habits.
